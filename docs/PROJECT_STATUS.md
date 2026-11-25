@@ -2,7 +2,7 @@
 
 > Snapshot of [ROADMAP.md](ROADMAP.md), which wins if the two ever disagree. Update both after every task.
 >
-> **Last updated: 2026-11-25** (owner decisions on the audit)
+> **Last updated: 2026-11-25** (Netlify preview published)
 
 ## Current phase
 
@@ -18,11 +18,11 @@ Progress = completed tasks ÷ all tasks in the phase.
 |---|---:|---:|
 | 1. Core Project Completion | 6 / 19 | 32% |
 | 2. Azure & DevOps | 0 / 17 | 0% |
-| 3. Market Validation | 0 / 12 (P3-12 Netlify preview in review) | 0% |
+| 3. Market Validation | 1 / 12 | 8% |
 | 4. Commercial Product Development (including the Admin Panel, P4-01…P4-11) | 0 / 43 | 0% |
 | 5. Commercial Readiness & Packaging | 1 / 24 | 4% |
 | 6. Sale & Handover | 0 / 14 | 0% |
-| **Overall** | **7 / 129** | **5.4%** |
+| **Overall** | **8 / 129** | **6.2%** |
 
 ## Done on 2026-11-25
 
@@ -30,6 +30,7 @@ Progress = completed tasks ÷ all tasks in the phase.
 - P1-16: project under git.
 - P1-17: unused PNGs removed from `static/`.
 - P1-18: franchise references removed from the docs.
+- P3-12: static preview published on Netlify (mock mode).
 - P5-14: the owner confirmed the right to sell under the training contract.
 - P1-12 started: `client/tests/` exists, with 64 tests passing.
 
@@ -58,3 +59,4 @@ Progress = completed tasks ÷ all tasks in the phase.
 |---|---|
 | 2026-11-25 | Initial audit and status baseline |
 | 2026-11-25 | Owner decisions: git, tests, PNG cleanup, IP scrub of the docs, D-014 deferred, P1-19 added, P5-14 confirmed |
+| 2026-11-25 | P3-12 completed: Netlify preview published |

@@ -6,7 +6,7 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 
 ### 2026-11-25: Netlify preview
 
-- `optional-concepts/tools/netlify/freeze.py` builds a static mock-mode copy of the shop in `dist/` (git-ignored) for Netlify Drop, with the same security headers. `client/` is unchanged (P3-12).
+- `optional-concepts/tools/netlify/freeze.py` builds a static mock-mode copy of the shop in `dist/` (git-ignored) for Netlify Drop, with the same security headers. `client/` is unchanged. The owner published it on Netlify (P3-12 completed).
 
 ### 2026-11-25: Small fixes
 
