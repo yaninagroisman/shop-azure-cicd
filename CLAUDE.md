@@ -10,8 +10,8 @@ Marvellous Mischief Co. is an immersive and gamified e-commerce platform. The pr
 
 ## Before starting any task
 
-1. Read `docs/ROADMAP.md` and `docs/PROJECT_STATUS.md`.
-2. Identify the current phase.
+1. Read `docs/PROJECT_STATUS.md` (short) to identify the current phase.
+2. In `docs/ROADMAP.md`, read **only** the task's row and the rows of its dependencies (for example `grep -n "P1-19" docs/ROADMAP.md`). Do not read the whole roadmap unless the task is about the roadmap itself.
 3. Check the task's dependencies.
 4. Clarify its acceptance criteria. If the task is not in ROADMAP, propose adding it there with an ID instead of keeping a separate list.
 
@@ -19,12 +19,12 @@ Marvellous Mischief Co. is an immersive and gamified e-commerce platform. The pr
 
 1. Verify the implementation.
 2. Run the relevant tests where possible. Never invent results; if a check was impossible, say why.
-3. Update the task's status, evidence and date in `docs/ROADMAP.md`. Mark it `COMPLETED` only after its acceptance criteria were actually checked.
+3. Update the task's status, evidence and date in its row in `docs/ROADMAP.md` (edit the row, do not reread the file), and the progress table if a status changed. Mark it `COMPLETED` only after its acceptance criteria were actually checked.
 4. Update `docs/PROJECT_STATUS.md`. Phase progress = completed tasks ÷ all tasks in the phase.
 5. Update `CHANGELOG.md`.
-6. Update every technical doc affected by the change (ARCHITECTURE, API, DATABASE, SECURITY, TESTING, DEPLOYMENT, DESIGN_SYSTEM, FEATURES).
+6. Update only the technical docs the change actually affects (ARCHITECTURE, API, DATABASE, SECURITY, TESTING, DEPLOYMENT, DESIGN_SYSTEM, FEATURES); read just the section you change.
 7. Record new technical decisions in `docs/DECISIONS.md`.
-8. Append a short note to `REPORT.md` (Russian work log).
+8. Append a short note to the end of `REPORT.md` (Russian work log). Only append; never read the whole file (it is large). Use `tail` if you need the last section.
 
 `docs/ROADMAP.md` is the **single source of truth** for tasks. Never create competing roadmaps or task lists.
 
