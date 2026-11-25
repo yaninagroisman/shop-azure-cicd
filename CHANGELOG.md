@@ -4,6 +4,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### 2026-11-25: Small fixes
+
+- Removed the "™" sign from the "Instant Midnight" darkness overlay (product stage and door game). It claimed a trademark the shop does not hold.
+
 ### 2026-11-25: Owner decisions on the audit
 
 Added:
