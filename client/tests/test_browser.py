@@ -68,7 +68,8 @@ def test_door_game_starts_scores_and_closes(make_page):
     assert page.locator(".game__item.is-caught").count() + int(page.inner_text("[data-game-score]")) > 0
     page.keyboard.press("Escape")
     page.wait_for_function("!document.querySelector('[data-game]').open", timeout=3000)
-    assert not page.evaluate("document.querySelector('[data-storefront]').classList.contains('is-open')")
+    # the dialog's "close" event (which shuts the door) fires a moment after .open turns false
+    page.wait_for_function("!document.querySelector('[data-storefront]').classList.contains('is-open')", timeout=3000)
     assert page.js_errors == []
 
 

@@ -31,6 +31,7 @@ Progress = completed tasks ÷ all tasks in the phase.
 - P1-17: unused PNGs removed from `static/`.
 - P1-18: franchise references removed from the docs.
 - P3-12: static preview published on Netlify (mock mode).
+- P1-01: mobile fixes (no sideways panning, steam position, darkness smoke clip); P5-13: margin-note signature fixed.
 - P5-14: the owner confirmed the right to sell under the training contract.
 - P1-12 started: `client/tests/` exists, with 64 tests passing.
 

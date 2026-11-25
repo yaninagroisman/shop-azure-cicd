@@ -4,6 +4,14 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### 2026-11-25: Mobile and content fixes
+
+- Home margin note signed "— R." (one of the twins) instead of "— F.".
+- Phones: the page can no longer be dragged sideways (the storefront feathers overflowed by 23 px).
+- Phones: the cauldron steam and lamp glow in the closing scene now follow the cropped photo instead of drifting left.
+- Instant Midnight: the arched product stage keeps its own layer so Safari clips the smoke to the arch instead of showing a square.
+- Test fix: the door-game test waited for the dialog's `close` event too early and failed about half the time.
+
 ### 2026-11-25: Netlify preview
 
 - `optional-concepts/tools/netlify/freeze.py` builds a static mock-mode copy of the shop in `dist/` (git-ignored) for Netlify Drop, with the same security headers. `client/` is unchanged. The owner published it on Netlify (P3-12 completed).
