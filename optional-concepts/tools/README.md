@@ -19,7 +19,7 @@ The source PNG masters are in `../source-png/`, which is excluded from git.
 
 ## `netlify/`: static preview
 
-`freeze.py` renders the whole shop (mock mode) into `../../../dist/` for Netlify Drop. See `docs/DEPLOYMENT.md`.
+`freeze.py` renders the whole shop (mock mode) into `dist/` at the project root for Netlify Drop. See `docs/DEPLOYMENT.md`.
 
 ## `checks/`: old ad-hoc browser checks
 
