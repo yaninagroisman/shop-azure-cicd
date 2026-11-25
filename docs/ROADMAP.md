@@ -39,11 +39,11 @@
 |---|---:|---:|---:|---:|---:|
 | 1. Core Project Completion | 19 | 6 | 10 | 1 | **32%** |
 | 2. Azure & DevOps | 17 | 0 | 0 | 0 | **0%** |
-| 3. Market Validation | 11 | 0 | 0 | 0 | **0%** |
+| 3. Market Validation | 12 | 0 | 1 | 0 | **0%** |
 | 4. Commercial Product Development | 43 | 0 | 0 | 0 | **0%** |
 | 5. Commercial Readiness & Packaging | 24 | 1 | 4 | 0 | **4%** |
 | 6. Sale & Handover | 14 | 0 | 0 | 0 | **0%** |
-| **Total** | **128** | **7** | **14** | **1** | **5.5%** |
+| **Total** | **129** | **7** | **15** | **1** | **5.4%** |
 
 **Current phase: Phase 1.** Phase 2 starts when every P0/P1 task of Phase 1 is `COMPLETED`.
 
@@ -108,6 +108,7 @@ This phase starts once a public Azure demo works. It does not wait for the comme
 | ID | Task | Pri | Depends on | Status | Acceptance criteria | Evidence | Updated |
 |---|---|---|---|---|---|---|---|
 | P3-01 | Prepare the public demo | P0 | P2-08, P2-12 | NOT_STARTED | Public URL. Demo checkout clearly labelled. | — | 2026-11-25 |
+| P3-12 | Quick static preview on Netlify (mock mode) | P2 | — | IN_REVIEW | `dist/` builds from the app without touching `client/`; all pages, basket, Ledger and game work when served like Netlify; the owner publishes it. | 2026-11-25: `optional-concepts/tools/netlify/freeze.py` builds 17 pages and 86 files (11 MB). Served locally with Netlify-style pretty URLs and `_headers`: 5 pages 200 with CSP, unknown URL 404, 0 broken images, 0 JS errors, basket checkout → "Mischief delivered!", Ledger 1 entry, card links and door game work. Not yet published (the owner uploads it). | 2026-11-25 |
 | P3-02 | Screenshots | P1 | P3-01 | NOT_STARTED | Desktop and mobile set, free of old trademarks. | — | 2026-11-25 |
 | P3-03 | Short presentation video | P1 | P3-01 | NOT_STARTED | 60–90 s video of the store, the game and the purchase flow. | — | 2026-11-25 |
 | P3-04 | Research competing products | P1 | — | NOT_STARTED | Comparison table with at least 5 products in [COMMERCIAL_READINESS.md](COMMERCIAL_READINESS.md). | — | 2026-11-25 |

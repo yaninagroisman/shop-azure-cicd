@@ -18,11 +18,11 @@ Progress = completed tasks ÷ all tasks in the phase.
 |---|---:|---:|
 | 1. Core Project Completion | 6 / 19 | 32% |
 | 2. Azure & DevOps | 0 / 17 | 0% |
-| 3. Market Validation | 0 / 11 | 0% |
+| 3. Market Validation | 0 / 12 (P3-12 Netlify preview in review) | 0% |
 | 4. Commercial Product Development (including the Admin Panel, P4-01…P4-11) | 0 / 43 | 0% |
 | 5. Commercial Readiness & Packaging | 1 / 24 | 4% |
 | 6. Sale & Handover | 0 / 14 | 0% |
-| **Overall** | **7 / 128** | **5.5%** |
+| **Overall** | **7 / 129** | **5.4%** |
 
 ## Done on 2026-11-25
 

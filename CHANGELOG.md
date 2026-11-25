@@ -4,6 +4,10 @@ All notable changes to this project. The format follows [Keep a Changelog](https
 
 ## [Unreleased]
 
+### 2026-11-25: Netlify preview
+
+- `optional-concepts/tools/netlify/freeze.py` builds a static mock-mode copy of the shop in `dist/` (git-ignored) for Netlify Drop, with the same security headers. `client/` is unchanged (P3-12).
+
 ### 2026-11-25: Small fixes
 
 - Removed the "™" sign from the "Instant Midnight" darkness overlay (product stage and door game). It claimed a trademark the shop does not hold.

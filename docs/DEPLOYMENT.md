@@ -26,6 +26,28 @@ docker run -d --name mischief-preview -p 8000:8000 \
 docker restart mischief-preview   # after editing files
 ```
 
+### Static preview on Netlify (mock mode)
+
+This is a quick way to show the shop to people. It does not change anything in `client/`.
+
+```bash
+python optional-concepts/tools/netlify/freeze.py   # needs Flask; writes dist/ (git-ignored)
+```
+
+The script renders every page through Flask's test client into plain files:
+
+- `index.html`, `catalogue.html`, `orders.html`, `product/<slug>.html` and `404.html`;
+- `static/`;
+- a `_headers` file with the same CSP and security headers that Flask sends.
+
+Then drag `dist/` onto <https://app.netlify.com/drop>. Netlify's pretty URLs serve `/catalogue` from `catalogue.html`.
+
+Limitations:
+
+- The preview always runs in mock mode. Orders exist only in each visitor's browser, and there is no Kafka or MongoDB.
+- The link is public.
+- Re-run the script and upload again after each change.
+
 ## 2. Infrastructure containers (present, not wired)
 
 ```bash

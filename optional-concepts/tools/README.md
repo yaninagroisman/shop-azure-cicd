@@ -17,6 +17,10 @@ These scripts need Python with `pillow` and `numpy`, plus `rembg` (BiRefNet and 
 
 The source PNG masters are in `../source-png/`, which is excluded from git.
 
+## `netlify/`: static preview
+
+`freeze.py` renders the whole shop (mock mode) into `../../../dist/` for Netlify Drop. See `docs/DEPLOYMENT.md`.
+
 ## `checks/`: old ad-hoc browser checks
 
 These Playwright scripts were used for manual checks before the test suite existed.
