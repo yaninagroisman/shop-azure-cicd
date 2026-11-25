@@ -31,7 +31,8 @@ docker restart mischief-preview   # after editing files
 This is a quick way to show the shop to people. It does not change anything in `client/`.
 
 ```bash
-python optional-concepts/tools/netlify/freeze.py   # needs Flask; writes dist/ (git-ignored)
+python3 -m venv .venv && .venv/bin/pip install -r client/requirements.txt   # once: Flask in a local venv (git-ignored)
+.venv/bin/python optional-concepts/tools/netlify/freeze.py                  # writes dist/ (git-ignored)
 ```
 
 The script renders every page through Flask's test client into plain files:

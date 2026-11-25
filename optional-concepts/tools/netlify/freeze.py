@@ -4,7 +4,7 @@ Read-only for the project: it imports the Flask app, renders every page through
 the test client and writes the result to <project root>/dist/ (git-ignored).
 Nothing in client/ is changed.
 
-    python optional-concepts/tools/netlify/freeze.py
+    .venv/bin/python optional-concepts/tools/netlify/freeze.py   # once: python3 -m venv .venv && .venv/bin/pip install -r client/requirements.txt
 
 Then drag the dist/ folder onto https://app.netlify.com/drop
 
