@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import product_card, coins, art, flourish, motes %}
+{% block title %}{{ product.name }} · Marvellous Mischief Co.{% endblock %}
+{% set hero = product.slug ~ ('--box' if product.effect == 'puffs' else '') %}
+{% block preload %}<link rel="preload" as="image" type="image/webp" fetchpriority="high" imagesrcset="{{ asset('img/products/640/' ~ hero ~ '.webp') }} 640w, {{ asset('img/products/' ~ hero ~ '.webp') }} 1600w" imagesizes="(max-width: 920px) 92vw, 600px">{% endblock %}
+{% block description %}{{ product.name }}: {{ product.tagline }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <ol>
+    <li><a href="{{ url_for('shop.home') }}">Shop window</a></li>
+    <li><a href="{{ url_for('shop.catalogue') }}">Catalogue</a></li>
+    <li aria-current="page">{{ product.name }}</li>
+  </ol>
+</nav>
+
+<section class="product" style="--accent: {{ product.accent }}" aria-labelledby="product-title">
+  <div class="product__showcase">
+    <div class="stage stage--big stage--{{ product.effect }}" data-stage data-effect="{{ product.effect }}">
+      <span class="stage__beam" aria-hidden="true"></span>
+      {{ art(product, eager=true, sizes="(max-width: 920px) 92vw, 600px") }}
+      {{ motes(10) }}
+    </div>
+    <button class="btn btn--demo" type="button" data-demo aria-pressed="false">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><use href="#i-star"/></svg>
+      <span>{{ product.demo }}</span>
+    </button>
+    <p class="margin-note margin-note--stage" aria-hidden="true">{{ product.warning }}</p>
+  </div>
+
+  <div class="product__info">
+    {% if product.badge %}<span class="ribbon ribbon--big">{{ product.badge }}</span>{% endif %}
+    <p class="eyebrow">{{ category_name(product.category) }}</p>
+    <h1 id="product-title" class="product__title">{{ product.name }}</h1>
+    <p class="product__tagline">{{ product.tagline }}</p>
+    <div class="product__price">{{ coins(product.coins, "coins--large") }}</div>
+
+    <p class="product__desc">{{ product.description }}</p>
+
+    <h2 class="product__subhead">Enchantments</h2>
+    <ul class="enchantments">
+      {% for prop in product.properties %}<li>{{ prop }}</li>{% endfor %}
+    </ul>
+
+    <form class="buy-form" data-add-form data-slug="{{ product.slug }}" data-name="{{ product.name }}" data-price="{{ product.price }}"
+          data-img="{{ asset('img/products/640/' ~ product.slug ~ '.webp') }}">
+      <div class="qty">
+        <label for="qty" class="qty__label">How many?</label>
+        <div class="qty__control">
+          <button type="button" class="qty__btn" data-qty-step="-1" aria-label="One fewer">−</button>
+          <input id="qty" name="quantity" type="number" inputmode="numeric" min="1" max="10" value="1" data-qty>
+          <button type="button" class="qty__btn" data-qty-step="1" aria-label="One more">+</button>
+        </div>
+      </div>
+      <div class="buy-form__total">
+        <span class="buy-form__total-label">Total</span>
+        <span data-total>{{ coins(product.coins) }}</span>
+      </div>
+      <button type="submit" class="btn btn--magic btn--buy" data-sparks>
+        <span class="btn__text">Add to basket</span>
+      </button>
+    </form>
+    <p class="buy-form__note">Nothing is bought until you check out from the <a href="#basket">basket</a>.</p>
+  </div>
+</section>
+
+<section class="related" aria-labelledby="related-title">
+  <header class="section-head">
+    <h2 id="related-title" class="section-title">You may also enjoy <em>(and regret)</em></h2>
+    {{ flourish() }}
+  </header>
+  <div class="related__grid">
+    {% for p in related %}{{ product_card(p) }}{% endfor %}
+  </div>
+</section>
+{% endblock %}

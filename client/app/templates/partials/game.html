@@ -1,0 +1,50 @@
+{#- "Mischief on the Loose": the door mini-game (static/js/game.js).
+    Everything the game needs is here; the stock comes from catalog.py. -#}
+<dialog class="game" data-game aria-labelledby="game-title">
+  <div class="game__scene" aria-hidden="true">
+    <img src="{{ asset('img/scenes/shop-interior.webp') }}" alt="" width="2400" height="1200" loading="lazy" decoding="async">
+  </div>
+
+  <div class="game__hud">
+    <p class="game__stat"><span class="game__label">Caught</span> <span class="game__coin" aria-hidden="true"></span><b data-game-score>0</b><span class="visually-hidden"> Griffins</span></p>
+    <p class="game__stat game__stat--time"><span class="game__label">Time</span> <b data-game-time>30</b><span class="visually-hidden"> seconds</span></p>
+    <p class="game__stat"><span class="game__label">Best</span> <b data-game-best>0</b></p>
+    <button class="game__close" type="button" data-game-close aria-label="Close the game">×</button>
+  </div>
+
+  <div class="game__arena" data-game-arena tabindex="-1"></div>
+  <div class="game__dark" aria-hidden="true"><span>Instant Midnight™</span></div>
+  <p class="visually-hidden" data-game-live aria-live="polite"></p>
+
+  <div class="game__card" data-game-intro>
+    <p class="eyebrow eyebrow--gold">The door's open. The stock is escaping.</p>
+    <h2 id="game-title" class="game__title">Mischief on the <em>Loose</em></h2>
+    <ul class="game__rules">
+      <li><span class="game__ico game__ico--box" aria-hidden="true"></span> <span>Catch the escaping stock: <b>1–2 Griffins</b> each</span></li>
+      <li><span class="game__ico game__ico--puff" aria-hidden="true"></span> <span>Pocket Fluffs are worth <b>3</b>. Be gentle</span></li>
+      <li><span class="game__ico game__ico--coin" aria-hidden="true"></span> <span>A runaway gold Griffin is worth <b>5</b></span></li>
+      <li><span class="game__ico game__ico--decoy" aria-hidden="true"></span> <span>Never grab a Diversion Cracker: <b>−3</b> and a bang</span></li>
+    </ul>
+    <p class="game__hint">Click or tap things before they float away. Keyboard: Tab to an item, Enter to catch it. 30 seconds.</p>
+    <button class="btn btn--magic btn--large" type="button" data-game-start data-sparks><span class="btn__text">Catch them!</span></button>
+  </div>
+
+  <div class="game__card" data-game-result hidden>
+    <p class="eyebrow eyebrow--gold">Shop closed. Stock counted.</p>
+    <p class="game__title game__title--result"><span class="game__coin game__coin--big" aria-hidden="true"></span><b data-game-final>0</b> Griffins</p>
+    <p class="game__verdict" data-game-verdict></p>
+    <p class="game__record" data-game-record hidden>A new shop record!</p>
+    <div class="game__actions">
+      <button class="btn btn--magic" type="button" data-game-start data-sparks><span class="btn__text">Again!</span></button>
+      <button class="btn btn--ghost" type="button" data-game-close>Back to the window</button>
+    </div>
+  </div>
+
+  {#- The stock: one hidden image per product; game.js clones them. -#}
+  <template data-game-stock>
+    {% for p in products %}
+    <img src="{{ asset('img/products/640/' ~ p.slug ~ '.webp') }}" alt="{{ p.name }}" width="640" height="640" data-effect="{{ p.effect }}">
+    {% endfor %}
+    <img src="{{ asset('img/sprites/coin-gold.webp') }}" alt="A runaway gold Griffin" width="128" height="128" data-effect="coin">
+  </template>
+</dialog>

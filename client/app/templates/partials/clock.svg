@@ -1,0 +1,24 @@
+<svg class="family-clock" viewBox="0 0 200 200" role="img" aria-label="A family clock. Both hands point to 'At the shop'." data-clock>
+  <circle cx="100" cy="100" r="96" fill="url(#g-gold)"/>
+  <circle cx="100" cy="100" r="88" fill="#f3e6c8" stroke="#6b1d2c" stroke-width="3"/>
+  <circle cx="100" cy="100" r="80" fill="none" stroke="#c99a3e" stroke-width="1" stroke-dasharray="1 4"/>
+  <path id="clock-ring" d="M30 100a70 70 0 1 1 140 0a70 70 0 1 1-140 0" fill="none"/>
+  <g font-family="Fraunces, serif" font-size="7" font-weight="700" fill="#4a1a5e" letter-spacing=".3">
+    <text text-anchor="middle"><textPath href="#clock-ring" startOffset="25%">AT THE SHOP</textPath></text>
+    <text text-anchor="middle"><textPath href="#clock-ring" startOffset="41.7%">HOME</textPath></text>
+    <text text-anchor="middle"><textPath href="#clock-ring" startOffset="58.3%">SCHOOL</textPath></text>
+    <text text-anchor="middle" fill="#9e2a3a"><textPath href="#clock-ring" startOffset="75%">GRAVE DANGER</textPath></text>
+    <text text-anchor="middle"><textPath href="#clock-ring" startOffset="91.7%">LOST</textPath></text>
+    <text text-anchor="middle"><textPath href="#clock-ring" startOffset="8.3%">TRAVELLING</textPath></text>
+  </g>
+  <g stroke="#c99a3e" stroke-width="1.4">{% for a in range(6) %}<path d="M100 22v7" transform="rotate({{ a * 60 + 30 }} 100 100)"/>{% endfor %}</g>
+  <g class="clock-hand clock-hand--rufus" data-clock-hand="rufus">
+    <path d="M100 100 L96 60 L100 44 L104 60Z" fill="#d4612a" stroke="#6b2a12" stroke-width="1"/>
+    <text x="100" y="72" font-family="Caveat, cursive" font-size="10" fill="#fff" text-anchor="middle">Rufus</text>
+  </g>
+  <g class="clock-hand clock-hand--reynard" data-clock-hand="reynard">
+    <path d="M100 100 L96 66 L100 52 L104 66Z" fill="#4a1a5e" stroke="#200a28" stroke-width="1"/>
+    <text x="100" y="80" font-family="Caveat, cursive" font-size="8" fill="#f0cf7a" text-anchor="middle">Reynard</text>
+  </g>
+  <circle cx="100" cy="100" r="7" fill="url(#g-gold)" stroke="#6b4a16"/>
+</svg>

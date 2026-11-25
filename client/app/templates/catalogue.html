@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import product_card, flourish %}
+{% block title %}The Catalogue · Marvellous Mischief Co.{% endblock %}
+{% block scripts %}<script src="{{ asset('js/catalogue.js') }}" defer></script>{% endblock %}
+
+{% block content %}
+<section class="page-head page-head--catalogue page-head--scene">
+  <img class="page-head__bg" src="{{ asset('img/scenes/shop-interior.webp') }}" alt="" width="2400" height="1200" fetchpriority="high" decoding="async">
+  <p class="eyebrow eyebrow--gold">Thirteen marvels, four shelves, no refunds</p>
+  <h1 class="page-title">The Catalogue of <em>Calculated Chaos</em></h1>
+  {{ flourish("flourish--gold") }}
+  <p class="page-lede">Every item hand-made above the shop. Most of them tested on our little brother.</p>
+</section>
+
+<section class="catalogue" aria-label="Products">
+  <form class="filters" role="search" data-filters>
+    <div class="filters__search">
+      <label for="q" class="visually-hidden">Search the shelves</label>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <input id="q" name="q" type="search" placeholder="Advenio… (try “bog” or “sweets”)" autocomplete="off" data-filter-search>
+    </div>
+    <div class="filters__chips" role="group" aria-label="Shelves">
+      <button type="button" class="chip" aria-pressed="true" data-filter-category="all">All shelves</button>
+      {% for c in categories %}
+      <button type="button" class="chip" aria-pressed="false" data-filter-category="{{ c.slug }}" title="{{ c.blurb }}">{{ c.name }}</button>
+      {% endfor %}
+    </div>
+    <div class="filters__sort">
+      <label for="sort">Order by</label>
+      <select id="sort" data-filter-sort>
+        <option value="shelf">The twins' preference</option>
+        <option value="price-asc">Cheapest first</option>
+        <option value="price-desc">Most Griffins first</option>
+        <option value="name">Alphabetical (boring)</option>
+      </select>
+    </div>
+  </form>
+
+  <p class="results-count" data-results-count aria-live="polite">Showing all {{ products|length }} products</p>
+
+  <div class="shelf" data-shelf>
+    {% for p in products %}
+      {{ product_card(p, "card--wide" if loop.index in [1, 9] else "") }}
+    {% endfor %}
+    <aside class="shelf-note" aria-label="A note from the proprietors">
+      <svg viewBox="0 0 60 40" aria-hidden="true"><use href="#i-footprints"/></svg>
+      <p class="shelf-note__hand">Can't find what you're after? It's probably in the back room, exploding quietly.</p>
+      <p class="shelf-note__hand">Ask for Reynard. Don't ask for Rufus, he's still inside the Bottled Bog.</p>
+      <p class="shelf-note__sig">— Reynard (and Rufus, from the bog)</p>
+    </aside>
+  </div>
+
+  <div class="empty-state" data-empty hidden>
+    <svg viewBox="0 0 60 40" aria-hidden="true"><use href="#i-footprints"/></svg>
+    <h2>Nothing on the shelves matches that.</h2>
+    <p>Even the Pocket Fluffs looked. Try another word, or <button type="button" class="link-button" data-filter-reset>clear the filters</button>.</p>
+  </div>
+</section>
+{% endblock %}

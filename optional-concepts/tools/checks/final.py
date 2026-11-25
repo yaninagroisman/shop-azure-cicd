@@ -1,0 +1,37 @@
+import glob, sys
+from playwright.sync_api import sync_playwright
+exe = None  # Playwright's bundled Chromium (run: playwright install chromium)
+B = "http://localhost:8000"; H = "http://localhost:8001"; O = sys.argv[1]
+with sync_playwright() as p:
+    b = p.chromium.launch(executable_path=exe)
+    pg = b.new_page(viewport={"width": 1440, "height": 900}); errs = []
+    pg.on("pageerror", lambda e: errs.append(str(e)))
+    pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
+    pg.goto(B + "/orders?mock=ok"); pg.wait_for_timeout(1200)
+    print("empty ledger:", pg.is_visible("[data-ledger-empty]"), "loading hidden:", not pg.is_visible("[data-ledger-loading]"))
+    pg.goto(B + "/product/skyroarer-rockets"); pg.wait_for_timeout(800)
+    pg.click("[data-qty-step='1']"); pg.click(".btn--buy"); pg.click("[data-basket-open]"); pg.click("[data-checkout]")
+    pg.wait_for_selector(".order-status--sending", timeout=2000); print("sending ok")
+    pg.wait_for_selector(".order-status--pending", timeout=3000); print("pending ok")
+    pg.wait_for_selector(".order-status--completed", timeout=10000); print("completed ok"); pg.keyboard.press("Escape")
+    pg.goto(B + "/catalogue"); pg.wait_for_timeout(800)
+    pg.click("[data-add='pocket-fluffs']"); pg.wait_for_selector(".toast"); print("add toast:", pg.inner_text(".toast__title")); pg.click("[data-basket-open]"); pg.click("[data-checkout]"); pg.wait_for_selector(".order-status--pending", timeout=3000); pg.keyboard.press("Escape")
+    pg.goto(B + "/orders"); pg.wait_for_selector(".entry", timeout=3000)
+    print("entries:", pg.locator(".entry").count(), "live:", pg.inner_text("[data-sync-status]"))
+    pg.wait_for_selector(".entry--pending", state="detached", timeout=10000)
+    pg.wait_for_timeout(800)
+    print("after:", [pg.locator(".entry").nth(i).get_attribute("class") for i in range(pg.locator(".entry").count())], "count", pg.inner_text("[data-sum-count]"))
+    pg.screenshot(path=f"{O}/f-ledger.png")
+    pg.goto(B + "/product/songbird-creams?mock=fail"); pg.wait_for_timeout(800)
+    pg.click(".btn--buy"); pg.click("[data-basket-open]"); pg.click("[data-checkout]"); pg.wait_for_selector(".order-status--failed", timeout=10000); print("failed ok:", pg.inner_text(".order-status__text"))
+    pg.reload(); pg.wait_for_timeout(500)
+    # http mode without a backend -> error states
+    pg.goto(H + "/product/hot-brow-fudge"); pg.wait_for_timeout(800)
+    pg.click(".btn--buy"); pg.click("[data-basket-open]"); pg.click("[data-checkout]"); pg.wait_for_selector(".order-status--error", timeout=4000); print("http error:", pg.inner_text(".order-status__text"), "| lines kept:", pg.locator(".basket-line").count()); pg.keyboard.press("Escape")
+    pg.goto(H + "/orders"); pg.wait_for_selector("[data-ledger-error]:not([hidden])", timeout=4000); print("ledger error banner ok")
+    pg.screenshot(path=f"{O}/f-ledger-error.png")
+    print("errors:", [e for e in errs if "404" not in e])
+    mp = b.new_page(viewport={"width": 390, "height": 844}, is_mobile=True)
+    mp.goto(B + "/orders"); mp.wait_for_timeout(1200); mp.screenshot(path=f"{O}/f-m-ledger.png")
+    print("mobile overflow:", mp.evaluate("document.documentElement.scrollWidth > innerWidth"))
+    b.close()

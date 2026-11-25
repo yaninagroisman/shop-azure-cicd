@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import flourish %}
+{% block title %}The Mischief Ledger · Your purchases · Marvellous Mischief Co.{% endblock %}
+{% block scripts %}<script src="{{ asset('js/ledger.js') }}" defer></script>{% endblock %}
+
+{% block content %}
+<section class="page-head page-head--ledger page-head--scene">
+  <img class="page-head__bg" src="{{ asset('img/scenes/workshop-night.webp') }}" alt="" width="2400" height="1200" fetchpriority="high" decoding="async">
+  <p class="eyebrow eyebrow--gold">The enchanted ledger of purchases</p>
+  <h1 class="page-title">The Mischief <em>Ledger</em></h1>
+  {{ flourish("flourish--gold") }}
+</section>
+
+<section class="ledger-wrap" aria-label="Purchase history">
+  <div class="ledger" data-ledger>
+    <div class="ledger__page ledger__page--left">
+      <p class="ledger__kept">Kept faithfully by Messrs. Rufus &amp; Reynard</p>
+      <dl class="tally" data-summary>
+        <div class="tally__row"><dt>Items delivered</dt><dd data-sum-count>–</dd></div>
+        <div class="tally__row"><dt>Gold spent</dt><dd data-sum-spent>–</dd></div>
+        <div class="tally__row"><dt>Owls in flight</dt><dd data-sum-pending>–</dd></div>
+        <div class="tally__row"><dt>Confiscated</dt><dd data-sum-failed>–</dd></div>
+      </dl>
+      <div class="ledger__legend" aria-hidden="true">
+        <p><span class="seal seal--pending"></span> Accepted, owl still flying</p>
+        <p><span class="seal seal--completed"></span> Processed and delivered</p>
+        <p><span class="seal seal--failed"></span> Did not survive the journey</p>
+      </div>
+      <p class="margin-note margin-note--ledger" aria-hidden="true">Spend responsibly. Or don't. We're not your mum.</p>
+      <p class="ledger__sync" data-sync-status aria-live="polite">The ink updates itself while owls are in flight.</p>
+    </div>
+
+    <div class="ledger__page ledger__page--right">
+      <div class="ledger__error" data-ledger-error role="alert" hidden>
+        <strong>The ledger has been befuddled.</strong> We couldn't fetch the latest entries. <button type="button" class="link-button" data-ledger-retry>Try again</button>
+      </div>
+
+      <div class="ledger__loading" data-ledger-loading>
+        <svg class="quill" viewBox="0 0 64 64" aria-hidden="true"><path d="M56 4C34 8 18 24 12 46l-4 14 6-10c4-2 10-2 14-6-4 0-6-1-8-2 6 0 12-2 16-6-4 0-6-1-7-2 8-2 14-8 17-14-3 1-6 1-8 0 8-4 12-10 18-16Z" fill="currentColor"/></svg>
+        <p>The quill is writing up your purchases…</p>
+      </div>
+
+      <ol class="entries" data-entries></ol>
+
+      <div class="ledger__empty" data-ledger-empty hidden>
+        <p class="ledger__empty-title">These pages are blank.</p>
+        <p>Suspiciously blank. Not a single Pip spent. Mum would be proud. We are not.</p>
+        <a class="btn btn--magic" href="{{ url_for('shop.catalogue') }}" data-sparks><span class="btn__text">Make some mischief</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% from "partials/macros.html" import product_card, flourish, art, feathers, motes %}
+{% block title %}Marvellous Mischief Co. · No. 7 Crooked Lane{% endblock %}
+{% block scripts %}<script src="{{ asset('js/game.js') }}" defer></script>{% endblock %}
+{% block preload %}<link rel="preload" href="{{ asset('img/scenes/storefront.webp') }}" as="image" type="image/webp" fetchpriority="high">{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__copy">
+    <p class="eyebrow eyebrow--gold">No. 7 Crooked Lane · Est. with a lucky wager</p>
+    <h1 id="hero-title" class="hero__title">
+      <span class="hero__line">Mischief,</span>
+      <span class="hero__line hero__line--italic">Merriment</span>
+      <span class="hero__line hero__line--small">&amp; Mild Peril</span>
+    </h1>
+    <p class="hero__lede">Three floors of truancy treats, fireworks, sneaky gadgets and small fluffy creatures, all invented, tested and mildly regretted by the twins Rufus and Reynard.</p>
+    <div class="hero__actions">
+      <a class="btn btn--magic" href="{{ url_for('shop.catalogue') }}" data-sparks><span class="btn__text">Step inside</span></a>
+      <a class="btn btn--ghost" href="{{ url_for('shop.orders') }}" data-ledger-link>
+        The Ledger: what you've bought
+        <span class="owl-badge" data-owl-badge hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-owl"/></svg>
+          <span data-owl-count>0</span><span class="visually-hidden"> orders in flight</span>
+        </span>
+      </a>
+    </div>
+    <p class="margin-note margin-note--hero" aria-hidden="true">Mum doesn't know about the third floor. Keep it that way. <span>— F.</span></p>
+  </div>
+
+  <div class="storefront" data-storefront>
+    <div class="storefront__scene">
+      <img class="storefront__img" src="{{ asset('img/scenes/storefront.webp') }}" width="1600" height="1920" fetchpriority="high" decoding="async"
+           alt="The Marvellous Mischief Co. shopfront at night: a purple Victorian shop with a gilded fascia, two glowing bay windows full of curiosities, a hanging M·M sign and a glazed door, on wet cobbles.">
+      <span class="glow glow--w1" aria-hidden="true"></span>
+      <span class="glow glow--w2" aria-hidden="true"></span>
+      <span class="glow glow--w3" aria-hidden="true"></span>
+      <span class="glow glow--bay-l" aria-hidden="true"></span>
+      <span class="glow glow--bay-r" aria-hidden="true"></span>
+      <span class="glow glow--sign" aria-hidden="true"></span>
+      <span class="glow glow--door" aria-hidden="true"></span>
+      <span class="glow glow--puddle" aria-hidden="true"></span>
+      <span class="chimney" aria-hidden="true"><i></i><i></i><i></i></span>
+      <button class="hotspot hanging-sign" type="button" aria-label="The swinging shop sign. Knock three times?"></button>
+      <button class="hotspot shop-door" type="button" aria-label="The shop door: push it open (starts a mini-game)" aria-haspopup="dialog"></button>
+    </div>
+    {{ motes(16) }}
+    {{ feathers(2) }}
+  </div>
+</section>
+
+<section class="window-display" aria-labelledby="window-title">
+  <div class="window-display__backdrop" aria-hidden="true">
+    <img src="{{ asset('img/scenes/shop-interior.webp') }}" alt="" width="2400" height="1200" loading="lazy" decoding="async">
+  </div>
+  <header class="section-head">
+    <p class="eyebrow eyebrow--gold">In the window this week</p>
+    <h2 id="window-title" class="section-title">Things that <em>should not</em> be sold to minors</h2>
+    {{ flourish("flourish--gold") }}
+  </header>
+  <div class="window-display__grid">
+    {% for p in featured %}
+      {{ product_card(p, "card--float card--float-" ~ loop.index) }}
+    {% endfor %}
+  </div>
+  <p class="window-display__more"><a class="link-arrow" href="{{ url_for('shop.catalogue') }}">Browse all {{ products|length }} marvels <span aria-hidden="true">→</span></a></p>
+</section>
+
+<section class="explainer" aria-labelledby="explainer-title">
+  <div class="explainer__art stage stage--snackbox" data-stage data-toggle-stage tabindex="0" role="button" aria-pressed="false" aria-label="Truant's Tuckbox. Press to open or close the lid.">
+    {{ art(snackbox, sizes="(max-width: 920px) 380px, 480px") }}
+  </div>
+  <div class="explainer__copy">
+    <p class="eyebrow">A short lesson in applied truancy</p>
+    <h2 id="explainer-title" class="section-title section-title--left">How a Tuckbox works</h2>
+    <ol class="steps">
+      <li><span class="steps__num">i</span><div><strong>Bite the orange end.</strong> Within a minute you're too ill to go on. Theatrically, convincingly, beautifully ill.</div></li>
+      <li><span class="steps__num">ii</span><div><strong>Get sent out of class.</strong> Look pale. Clutch something. Mumble about the infirmary.</div></li>
+      <li><span class="steps__num">iii</span><div><strong>Bite the purple end.</strong> Fully recovered by the second corridor. The afternoon is yours.</div></li>
+    </ol>
+    <a class="btn btn--magic" href="{{ url_for('shop.product', slug='truants-tuckbox') }}" data-sparks><span class="btn__text">Get a Tuckbox</span></a>
+  </div>
+</section>
+
+<section class="gazette" aria-labelledby="gazette-title">
+  <div class="gazette__paper">
+    <header class="gazette__mast">
+      <span>Vol. XCIII</span>
+      <h2 id="gazette-title">The Mischief Gazette</h2>
+      <span>Price: one Pip</span>
+    </header>
+    <p class="gazette__headline">“Corridor Lost to Bog; Staff ‘Baffled’; Students ‘Delighted’”</p>
+    <div class="gazette__cols">
+      <blockquote>
+        <p>“I ate one Songbird Cream at a family dinner and moulted for a week. Best Christmas ever.”</p>
+        <footer>— N.L., recently a songbird</footer>
+      </blockquote>
+      <blockquote>
+        <p>“The Diversion Cracker ran straight under the chemistry master's robes. I have never been so proud.”</p>
+        <footer>— a grateful fifth-year</footer>
+      </blockquote>
+      <blockquote>
+        <p>“BANNED. All of it. Every last item. And whoever let that bog in will be hearing from me.”</p>
+        <footer>— Mr. Grimsby, caretaker (not a customer)</footer>
+      </blockquote>
+    </div>
+  </div>
+</section>
+
+<section class="closing" aria-labelledby="closing-title">
+  <div class="closing__scene" aria-hidden="true">
+    <img src="{{ asset('img/scenes/workshop-night.webp') }}" alt="" width="2400" height="1200" loading="lazy" decoding="async">
+    <span class="steam"><i></i><i></i><i></i><i></i></span>
+    <span class="glow glow--lamp"></span>
+    <span class="glow glow--lantern"></span>
+  </div>
+  <div class="closing__copy">
+    <p class="eyebrow eyebrow--gold">Upstairs, after closing</p>
+    <h2 id="closing-title" class="closing__title">Why worry about the end of the world when you could be <em>buying fireworks?</em></h2>
+    <a class="btn btn--magic btn--large" href="{{ url_for('shop.catalogue') }}" data-sparks><span class="btn__text">Open the catalogue</span></a>
+    <p class="closing__hint">Psst. Try typing <span class="whisper">lucerna</span>. Or “nothing up my sleeve”.</p>
+  </div>
+</section>
+
+{% include "partials/game.html" %}
+{% endblock %}

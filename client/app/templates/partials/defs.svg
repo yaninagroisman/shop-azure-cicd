@@ -1,0 +1,32 @@
+<svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <!-- Shared gold gradient (seal, clock) and small icons -->
+    <linearGradient id="g-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7dc8d"/><stop offset=".5" stop-color="#d3a443"/><stop offset="1" stop-color="#8f6420"/>
+    </linearGradient>
+    <symbol id="i-owl" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M12 3c-3.6 0-6.5 2.4-6.5 6.6 0 2.1.6 3.9 1.6 5.4L5 19.5l3.6-1.6c1 .5 2.1.8 3.4.8s2.4-.3 3.4-.8l3.6 1.6-2.1-4.5c1-1.5 1.6-3.3 1.6-5.4C18.5 5.4 15.6 3 12 3Zm-3 4.3a2 2 0 1 1 0 4 2 2 0 0 1 0-4Zm6 0a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM12 12l1.2 1.6h-2.4Z"/>
+      <path fill="currentColor" d="M5.5 5 4 2.5 7.5 4M18.5 5 20 2.5 16.5 4"/>
+    </symbol>
+    <symbol id="i-basket" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7.5 10 11 4M16.5 10 13 4M3 10h18l-1.8 9.2a1.6 1.6 0 0 1-1.6 1.3H6.4a1.6 1.6 0 0 1-1.6-1.3Z"/>
+      <path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M9 13.5v4M12 13.5v4M15 13.5v4"/>
+    </symbol>
+    <symbol id="i-footprints" viewBox="0 0 60 40">
+      <g fill="currentColor">
+        <path d="M14 8c3.2 0 5 3.6 5 8.2 0 3.8-1.5 6.6-4.6 6.6S10 20 10 16.2C10 11.6 11 8 14 8Zm-.6 16.6c2.2 0 3.6 1.3 3.6 3.6 0 2.2-1.4 3.8-3.4 3.8s-3.4-1.6-3.4-3.8c0-2.3 1.2-3.6 3.2-3.6Z"/>
+        <path d="M42 2c3.2 0 5 3.6 5 8.2 0 3.8-1.5 6.6-4.6 6.6S38 14 38 10.2C38 5.6 39 2 42 2Zm-.6 16.6c2.2 0 3.6 1.3 3.6 3.6 0 2.2-1.4 3.8-3.4 3.8s-3.4-1.6-3.4-3.8c0-2.3 1.2-3.6 3.2-3.6Z"/>
+      </g>
+    </symbol>
+    <symbol id="i-foot" viewBox="0 0 20 34">
+      <path fill="currentColor" d="M10 1c3.6 0 5.6 4 5.6 9.2 0 4.3-1.7 7.4-5.2 7.4S4.4 14.5 4.4 10.2C4.4 5 5.6 1 10 1Zm-.6 18.6c2.4 0 4 1.5 4 4 0 2.5-1.6 4.3-3.8 4.3S5.8 26.1 5.8 23.6c0-2.6 1.3-4 3.6-4Z"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 20 20">
+      <path fill="currentColor" d="M10 0c.8 5.3 4.7 9.2 10 10-5.3.8-9.2 4.7-10 10-.8-5.3-4.7-9.2-10-10 5.3-.8 9.2-4.7 10-10Z"/>
+    </symbol>
+    <symbol id="i-flourish" viewBox="0 0 240 24">
+      <path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M2 12h70c10 0 14-9 22-9s10 7 4 9-10-4-2-7M238 12h-70c-10 0-14-9-22-9s-10 7-4 9 10-4 2-7M104 12c4-6 10-9 16-9s12 3 16 9c-4 6-10 9-16 9s-12-3-16-9Z"/>
+      <circle cx="120" cy="12" r="3" fill="currentColor"/>
+    </symbol>
+  </defs>
+</svg>

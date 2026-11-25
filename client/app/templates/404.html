@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Vanished · Marvellous Mischief Co.{% endblock %}
+{% block content %}
+<section class="vanished">
+  <img class="vanished__bg" src="{{ asset('img/scenes/workshop-night.webp') }}" alt="" width="2400" height="1200" decoding="async">
+  <div class="vanished__prints" aria-hidden="true">
+    {% for i in range(6) %}<svg class="vanished__foot" style="--i: {{ i }}" viewBox="0 0 20 34"><use href="#i-foot"/></svg>{% endfor %}
+  </div>
+  <p class="eyebrow eyebrow--gold">Error 404 · Page not found</p>
+  <h1 class="page-title">This page has been <em>Vanished</em></h1>
+  <p class="page-lede">Either it never existed, or someone tested a disappearing wardrobe on it. The footprints lead back to the shop.</p>
+  <a class="btn btn--magic" href="{{ url_for('shop.home') }}" data-sparks><span class="btn__text">Follow the footprints</span></a>
+</section>
+{% endblock %}

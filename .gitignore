@@ -1,0 +1,19 @@
+# secrets and local settings
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# large source masters (kept outside git, hand over separately)
+optional-concepts/source-png/
+
+# editors / OS
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,26 @@
+{#- The shopping basket drawer (static/js/basket.js). Opened by any [data-basket-open] button. -#}
+<dialog class="basket" data-basket aria-labelledby="basket-title">
+  <div class="basket__panel">
+    <header class="basket__head">
+      <p class="eyebrow eyebrow--gold">Packed by hand, sent by owl</p>
+      <h2 id="basket-title" class="basket__title">Your <em>Basket</em></h2>
+      <button class="basket__close" type="button" data-basket-close aria-label="Close the basket">×</button>
+    </header>
+
+    <ul class="basket__lines" data-basket-lines aria-label="Items in the basket"></ul>
+
+    <div class="basket__empty" data-basket-empty>
+      <p class="basket__empty-title">Nothing in here yet.</p>
+      <p>Not even a Pocket Fluff. Go on, pick something reckless.</p>
+      <a class="btn btn--ghost btn--small" href="{{ url_for('shop.catalogue') }}">Browse the catalogue</a>
+    </div>
+
+    <div class="order-status" data-basket-status hidden tabindex="-1" aria-live="polite"></div>
+
+    <footer class="basket__foot" data-basket-foot hidden>
+      <div class="basket__total"><span class="basket__total-label">Total</span><span data-basket-total></span></div>
+      <button class="btn btn--magic btn--buy" type="button" data-checkout data-sparks><span class="btn__text">Check out &amp; send an owl</span></button>
+      <p class="basket__fine">Each line travels as its own order. No refunds, as usual.</p>
+    </footer>
+  </div>
+</dialog>

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en-GB" class="no-js" data-entrance="{{ 'smoke' if page == 'home' else 'fade' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Marvellous Mischief Co.{% endblock %}</title>
+  <meta name="description" content="{% block description %}Marvellous Mischief Co., No. 7 Crooked Lane. Truancy treats, pyrotechnics, Pocket Fluffs and high-quality mischief.{% endblock %}">
+  <meta name="theme-color" content="#120612">
+  <link rel="icon" href="{{ asset('img/favicon.svg') }}" type="image/svg+xml">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/fraunces-latin-wght-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/im-fell-english-latin-400-normal.woff2') }}" as="font" type="font/woff2" crossorigin>
+  {% block preload %}{% endblock %}
+  <link rel="stylesheet" href="{{ asset('css/main.css') }}">
+  <script src="{{ asset('js/boot.js') }}"></script>
+  <script src="{{ asset('js/magic.js') }}" defer></script>
+  {% if config.API_MODE == 'mock' %}<script src="{{ asset('js/mock-api.js') }}" defer></script>{% endif %}
+  <script src="{{ asset('js/api.js') }}" defer></script>
+  <script src="{{ asset('js/shop.js') }}" defer></script>
+  <script src="{{ asset('js/basket.js') }}" defer></script>
+  <script src="{{ asset('js/effects.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</head>
+<body class="page-{{ page }}" data-api-mode="{{ config.API_MODE }}" data-poll-interval="{{ config.POLL_INTERVAL_MS }}">
+  {% if page == 'home' %}
+  <!-- Arriving at the shop window: purple smoke (first in <body> so it is in the very first paint) -->
+  <div class="curtain" aria-hidden="true">
+    <div class="curtain__smoke"><i></i><i></i><i></i></div>
+    <div class="curtain__seal">{% include "partials/seal.svg" %}</div>
+  </div>
+  {% endif %}
+  <a class="skip-link" href="#main">Skip to the good stuff</a>
+  {% include "partials/defs.svg" %}
+
+  <header class="site-header" data-header>
+    <div class="ticker" aria-label="Notices from the management">
+      <div class="ticker__track">
+        <ul class="ticker__list">
+          {% for q in quips %}<li>{{ q }}</li>{% endfor %}
+        </ul>
+        <ul class="ticker__list" aria-hidden="true">
+          {% for q in quips %}<li>{{ q }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="Main">
+      <a class="brand" href="{{ url_for('shop.home') }}" data-secret-seal aria-label="Marvellous Mischief Co., home">
+        {% include "partials/seal.svg" %}
+        <span class="brand__words">
+          <span class="brand__small">Marvellous</span>
+          <span class="brand__big">Mischief Co.</span>
+        </span>
+      </a>
+
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="nav-menu" data-nav-toggle>
+        <span class="nav__toggle-bars" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="nav__toggle-label">Menu</span>
+      </button>
+
+      <div class="nav__menu" id="nav-menu" data-nav-menu>
+        <ul class="nav__links">
+          <li><a href="{{ url_for('shop.home') }}" {% if page == 'home' %}aria-current="page"{% endif %}><span class="nav__num">I.</span> The Shop Window</a></li>
+          <li><a href="{{ url_for('shop.catalogue') }}" {% if page == 'catalogue' %}aria-current="page"{% endif %}><span class="nav__num">II.</span> The Catalogue</a></li>
+        </ul>
+        <p class="nav__menu-note" aria-hidden="true">“We promise these links are up to no good.”</p>
+      </div>
+
+      <button class="basket-btn" type="button" data-basket-open aria-haspopup="dialog" aria-label="Basket">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-basket"/></svg>
+        <span class="basket-btn__label" aria-hidden="true">Basket</span>
+        <span class="basket-btn__count" data-basket-count aria-hidden="true" hidden>0</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer__inner">
+      <div class="footer__col footer__address">
+        <p class="eyebrow">Find us</p>
+        <p class="footer__big">No. 7, Crooked Lane</p>
+        <p>Between the old counting house and a very nervous stationer.<br>Open nine till mischief, every day but Christmas.</p>
+      </div>
+
+      <div class="footer__col footer__clock">
+        {% include "partials/clock.svg" %}
+        <p class="footer__caption">Where are the proprietors?</p>
+      </div>
+
+      <div class="footer__col footer__sign">
+        <p class="eyebrow">Proprietors</p>
+        <p class="signature">Rufus <span>&amp;</span> Reynard</p>
+        <p class="footer__fine">No refunds. No angry letters. No inspectors without an appointment.</p>
+        <button class="footprint-trigger" type="button" data-chart-trigger aria-label="A pair of footprints. What could they mean?">
+          <svg viewBox="0 0 60 40" aria-hidden="true"><use href="#i-footprints"/></svg>
+        </button>
+      </div>
+    </div>
+    <p class="footer__legal">© Marvellous Mischief Co. All mischief is fictional; all Griffins are imaginary.</p>
+  </footer>
+
+  <!-- Overlays & magic layers (decorative) -->
+  <canvas class="magic-canvas" data-magic-canvas aria-hidden="true"></canvas>
+  <div class="footprints-layer" data-footprints aria-hidden="true"></div>
+  <div class="wandlight-layer" aria-hidden="true"></div>
+
+  <div class="chart" data-chart hidden>
+    <div class="chart__paper">
+      <div class="chart__walkers" data-chart-walkers></div>
+      <p class="chart__title">Messrs Rufus &amp; Reynard</p>
+      <p class="chart__sub">Cartographers of the unwatched corner<br>are proud to present</p>
+      <p class="chart__big">The Prowler's Chart</p>
+      <p class="chart__hint">Footprints are wandering about the shop. Type <em>“all clear”</em> to fold it away, or press Escape.</p>
+      <button class="btn btn--ink" type="button" data-chart-close>All clear</button>
+    </div>
+  </div>
+
+  {% include "partials/basket.html" %}
+
+  <div class="toasts" data-toasts role="status" aria-live="polite"></div>
+</body>
+</html>
