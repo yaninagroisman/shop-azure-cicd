@@ -31,6 +31,7 @@ D-001 to D-013 were made during the frontend work before 2026-11-25. They are re
 | D-018 | 2026-11-25 | **The owner writes the backend (API, Kafka producer and consumer, MongoDB access)** as part of the course | Roadmap tasks P1-02, P1-05, P1-09 and P1-10 are owner-implemented. The contract in API.md stays the interface between the two halves. |
 | D-019 | 2026-11-25 | **Git from now on; PNG masters stay outside git** (`optional-concepts/source-png/`, git-ignored) | Keeps the repository light (WebP only, 11 MB). The masters must still be handed over to a buyer (P6-10). |
 | D-020 | 2026-11-25 | **Fix the non-atomic checkout (R-07)**: one order with lines per basket | Planned as P1-19. Changes the API contract, so it is agreed with the backend first. |
+| D-021 | 2026-11-25 | **Keep the easter eggs as they are** (secret chart and its phrase, Latin secret words, family clock) | Owner's decision. They use only original names and texts. The residual similarity in mechanics stays part of risk R-03, for the lawyer's review before listing (P5-13). |
 
 ## Deferred
 
@@ -44,4 +45,3 @@ D-001 to D-013 were made during the frontend work before 2026-11-25. They are re
 |---|---|---|---|
 | D-015 | Who writes the `pending` row? (The owner decides while writing the backend.) | (a) the API inserts `pending` and then produces; the consumer updates. (b) The API only produces; the consumer inserts. | **(b)** keeps writes purely asynchronous, as the course requires, with no dual-write. The UI already tracks the id returned by the 202. |
 | D-016 | Remote git hosting | GitHub private / Azure Repos | Decide with P2-04 (Azure DevOps Pipelines can use either). |
-| D-021 | Theme of the easter eggs (risk R-03) | Keep as is / replace the secret-chart phrase, Latin words and family clock with original mechanics | Needs the owner's view. It is a design change, so nothing changes without approval. |

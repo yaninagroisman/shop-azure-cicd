@@ -39,9 +39,7 @@ Progress = completed tasks ÷ all tasks in the phase.
 - **D-014** (catalog and price source for the backend) is deferred to the admin panel (P4-03).
 - **D-015** (who writes the `pending` row) is the owner's call while writing the backend.
 - **P1-19 atomic checkout** needs the API contract change agreed with the backend.
-- **P5-13 IP:**
-  - The project folder is still named "HP Store Project".
-  - The theme of the easter eggs needs the owner's decision.
+- **P5-13 IP:** the project folder is still named "HP Store Project". The easter eggs stay as they are (D-021).
 
 ## Recommended next tasks (in order)
 
@@ -52,7 +50,7 @@ Progress = completed tasks ÷ all tasks in the phase.
 2. **P1-19:** agree the "one order with lines" contract, then implement it on both sides.
 3. **P1-13, P1-14:** `client/Dockerfile` (Gunicorn), plus compose services for client, api and consumer, with health checks.
 4. **P1-12:** API and consumer tests, and an integration test through Kafka.
-5. **P5-13:** decide on the folder rename and the easter-egg theme.
+5. **P5-13:** rename the project folder (after closing the session).
 
 ## Change log of this file
 

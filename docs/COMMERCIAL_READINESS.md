@@ -10,7 +10,7 @@
 | Public demo | ✗ | P3-01 |
 | Version control and clean history | ✓ local git (2026-11-25) | P1-16, P5-10 |
 | Automated tests | partial (client: 64 tests) | P1-12, P5-05 |
-| IP clean | partial (code, images and docs OK; folder name and easter-egg theme open) | P5-13 |
+| IP clean | partial (code, images and docs OK; folder name open; easter eggs kept (D-021)) | P5-13 |
 | Right to sell (training project) | ✓ per contract (owner) | P5-14 |
 | AI asset terms | generator recorded (ChatGPT), details open | P5-15 |
 | Licences of fonts and libraries | partial (fonts OFL, Flask BSD-3, pymongo Apache-2.0) | P5-12, P5-16 |
@@ -23,7 +23,7 @@
 |---|---|---|---|---|
 | R-01 | ~~No version control~~. **Resolved 2026-11-25**: local git repository (P1-16). A remote is still to be chosen (D-016) | — | — | Push to a private remote |
 | R-02 | **Backend not written.** The core course requirement (Kafka async writes) is not met: `app.py` and `consumer.py` are empty | Certain (today) | High | The owner is writing it (D-018): P1-02, P1-09, P1-10 |
-| R-03 | **Residual third-party IP.** Code and images are rebranded, but: (a) ~~docs mapping products to the franchise~~ removed 2026-11-25 (P1-18); (b) the project folder is named "HP Store Project"; (c) the catalogue concept and the easter eggs (secret map with an oath phrase, spell-like Latin words, a family clock with danger hands, twin shop owners) closely follow that franchise | High | High: a buyer's legal review could reject it | Docs scrubbed (P1-18). Rename the folder; decide on the easter eggs (D-021); have an IP lawyer review the theme (P5-13). Consider making a second, neutral demo theme the primary listing (P4-39) |
+| R-03 | **Residual third-party IP.** Code and images are rebranded, but: (a) ~~docs mapping products to the franchise~~ removed 2026-11-25 (P1-18); (b) the project folder is named "HP Store Project"; (c) the catalogue concept and the easter eggs (secret map with an oath phrase, spell-like Latin words, a family clock with danger hands, twin shop owners) closely follow that franchise | High | High: a buyer's legal review could reject it | Docs scrubbed (P1-18). Rename the folder; easter eggs kept as they are by owner decision (D-021); have an IP lawyer review the theme (P5-13). Consider making a second, neutral demo theme the primary listing (P4-39) |
 | R-04 | ~~Ownership of a training project~~. **Resolved 2026-11-25**: the owner confirmed that the training contract allows the sale (P5-14) | — | — | Keep a copy of the clause for buyer due diligence |
 | R-05 | **Partial test coverage.** The client has 64 automated tests (2026-11-25); the backend has none yet | Certain | Medium | P1-12 |
 | R-06 | **AI-generated images** (ChatGPT, OpenAI). The generator is recorded; dates and prompts are not. Some jurisdictions give weak copyright protection to AI output, which lowers its exclusive value | Medium | Medium | Asset register (P5-15, P5-16); disclose it in the listing |
