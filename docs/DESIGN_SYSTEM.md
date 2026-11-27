@@ -1,6 +1,6 @@
 # Design System
 
-> Approved design. **Do not change the visual design without the owner's permission** (see `CLAUDE.md`).
+> Approved design. **Do not change the visual design without the owner's permission**.
 
 All styles live in one file, `client/app/static/css/main.css` (≈1,320 lines). There is no preprocessor and no build step.
 
@@ -38,7 +38,6 @@ White-label theming (P4-38) should start here: a theme is a file that overrides 
 - Product photos are cut-outs on transparent 1600×1600 canvases, with the base of the object at 88% of the height. There are 640 px copies in `products/640/`.
 - Multi-state products use extra frames (`--open`, `--extended`) or layers (`pocket-fluffs--box/--violet/--pink`).
 - Scenes live in `img/scenes/` (storefront, shop interior, workshop). The door and sign hotspots are positioned in % over the storefront photo.
-- Image brief and naming: [ASSETS.md](../ASSETS.md). Only §0 is current.
 
 ## Motion and accessibility rules
 
