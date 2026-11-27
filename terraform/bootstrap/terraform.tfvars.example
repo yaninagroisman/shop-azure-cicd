@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars (git-ignored) and fill in real values.
+# This example file IS committed: keep only placeholders here.
+
+subscription_id = "00000000-0000-0000-0000-000000000000" # az account show --query id -o tsv
+owner           = "your-name"                            # free-text tag value, e.g. your first name; not an email
+repository_url  = "https://github.com/<user>/<repo>"
+
+azure_devops_org_url    = "https://dev.azure.com/<organization>"
+approver_principal_name = "you@example.com" # your Azure DevOps sign-in
+
+budget_contact_emails = ["you@example.com"]
+
+# Defaults you may override:
+# location      = "swedencentral"
+# project       = "shop"
+# budget_amount = 100
