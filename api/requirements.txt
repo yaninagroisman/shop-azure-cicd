@@ -1,0 +1,14 @@
+# Fully pinned for reproducible builds and stable vulnerability scans.
+# Direct dependencies:
+Flask==3.1.3
+pymongo==4.20.2
+confluent-kafka==2.16.2
+gunicorn==27.0.1
+# Transitive dependencies (pip freeze in a clean venv):
+blinker==1.9.0
+click==8.5.1
+dnspython==2.9.2
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.4
+Werkzeug==3.1.9
