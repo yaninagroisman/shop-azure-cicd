@@ -5,10 +5,16 @@
     /product/<slug>     one product
     /orders             purchase history, "The Mischief Ledger" (filled in by static/js/ledger.js)
 """
-from flask import Blueprint, abort, render_template
-
+from flask import Blueprint, abort, render_template, request, jsonify
 from .catalog import CATEGORIES, PRODUCTS, get_product, related_products
+from uuid import uuid4
+from datetime import datetime, timezone
+from producer import send_purchase
+from confluent_kafka import KafkaException
+import os
+import requests
 
+API_URL = os.getenv("API_URL", "http://api:5000")
 bp = Blueprint("shop", __name__)
 
 
@@ -37,6 +43,75 @@ def orders():
     return render_template("orders.html", page="ledger")
 
 
+@bp.get("/healthz")
+def healthz():
+    """Liveness and readiness probe. Deliberately no Kafka or API check: the
+    pages render without them, and /api/* already answers 503 on its own."""
+    return jsonify({"status": "ok"})
+
+
 @bp.app_errorhandler(404)
 def not_found(_error):
     return render_template("404.html", page="404"), 404
+
+@bp.post("/api/buy")
+def buy():
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON"}), 400
+
+    slug = data.get("product_slug")
+    quantity = data.get("quantity")
+
+    if not isinstance(slug, str):
+        return jsonify({"error": "Invalid product"}), 400
+
+    item = get_product(slug)
+
+    if item is None:
+        return jsonify({"error": "Product not found"}), 404
+
+    if type(quantity) is not int or not 1 <= quantity <= 10:
+        return jsonify({"error": "Invalid quantity"}), 400
+    purchase_id = str(uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    purchase = {
+        "id": purchase_id,
+        "purchase_id": purchase_id,
+        "product_slug": slug,
+        "product_name": item["name"],
+        "quantity": quantity,
+        "unit_price": item["price"],
+        "total_price": item["price"] * quantity,
+        "status": "pending",
+        "failure_reason": None,
+        "created_at": now,
+        "updated_at": now
+    }
+    try:
+        send_purchase(purchase)
+
+    except (KafkaException, TimeoutError, RuntimeError, BufferError):
+        return jsonify({"error": "Purchase service unavailable"}), 503
+
+    return jsonify({"purchase": purchase}), 202
+
+@bp.get("/api/purchases")
+def get_purchases():
+    try:
+        response = requests.get(
+            f"{API_URL}/purchases",
+            timeout=5
+        )
+
+        response.raise_for_status()
+
+        return jsonify(response.json()), 200
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Purchase history unavailable"
+        }), 503
