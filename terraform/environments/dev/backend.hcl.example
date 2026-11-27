@@ -1,0 +1,6 @@
+# Copy to backend.hcl (git-ignored). Values: terraform -chdir=../../bootstrap output
+resource_group_name  = "rg-shop-bootstrap-swc"
+storage_account_name = "<state_storage_account_name output of the bootstrap>"
+container_name       = "tfstate"
+key                  = "dev.tfstate"
+use_azuread_auth     = true

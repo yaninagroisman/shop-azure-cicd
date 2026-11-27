@@ -1,0 +1,12 @@
+# Copy to terraform.tfvars (git-ignored) and fill in real values.
+# This example file IS committed: keep only placeholders here.
+
+subscription_id = "00000000-0000-0000-0000-000000000000" # az account show --query id -o tsv
+owner           = "your-name"                            # free-text tag value, not an email
+repository_url  = "https://github.com/<user>/<repo>"
+
+# Your current public IP as /32 (e.g. from "what is my IP"). Update it when it changes.
+api_server_authorized_ip_ranges = ["203.0.113.10/32"]
+
+# Your Entra object ID: az ad signed-in-user show --query id -o tsv
+cluster_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]

@@ -34,6 +34,16 @@ resource "azurerm_role_assignment" "plan_reader" {
   description          = "tf-plan: refresh state and compute plans."
 }
 
+# Reader has no Key Vault data actions; refreshing a key needs its metadata
+# and public part. Key Vault Reader cannot read secret values or use keys.
+resource "azurerm_role_assignment" "plan_key_vault_reader" {
+  scope                = data.azurerm_subscription.current.id
+  role_definition_name = "Key Vault Reader"
+  principal_id         = azurerm_user_assigned_identity.pipeline["tf-plan"].principal_id
+  principal_type       = "ServicePrincipal"
+  description          = "tf-plan: read Key Vault key metadata and public keys during refresh."
+}
+
 # --- tf-apply: manage resources, assign only an allow-list of roles --------
 # Subscription scope so the main stack can create and delete its own
 # resource groups (one apply / one destroy, AD-31).

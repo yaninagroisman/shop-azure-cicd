@@ -8,7 +8,7 @@ before the main stack and must survive its `terraform destroy`:
 | `rg-shop-bootstrap-swc` | Resource group for everything below |
 | `stshoptfstate<suffix>` / container `tfstate` | Remote state for all stacks. ZRS, Entra ID only (no keys), versioning, 30-day soft delete, `prevent_destroy` + `CanNotDelete` lock. Locking uses blob leases |
 | `id-shop-tf-plan`, `id-shop-tf-apply`, `id-shop-ci` | Managed identities for Azure Pipelines, federated with the service connections (no secrets) |
-| Role assignments | `tf-plan`: Reader + state. `tf-apply`: Contributor + RBAC Administrator limited by an ABAC condition to an allow-list of roles + state. `ci`: nothing yet (the main stack grants AcrPush) |
+| Role assignments | `tf-plan`: Reader + Key Vault Reader (key metadata, no secret values) + state. `tf-apply`: Contributor + RBAC Administrator limited by an ABAC condition to an allow-list of roles + state. `ci`: nothing yet (the main stack grants AcrPush) |
 | Azure DevOps project `shop` | Pipelines only; WIF service connections `sc-azure-*`; environment `dev` with approval; `tf-apply` connection: approval + main branch only; `ci` connection: main branch only |
 | Budget | Subscription-wide, monthly; email at 25/50/80 % actual and 100 % forecast |
 | Resource providers | Registered explicitly (`resource_providers_to_register`) |
