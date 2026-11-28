@@ -110,7 +110,8 @@ variable "assignable_role_names" {
     (ABAC condition on its RBAC Administrator role). These are the roles the
     main stack grants: kubelet AcrPull, CI AcrPush, AKS control plane network
     and identity roles, Key Vault data roles, AKS admin and Prometheus read
-    access for the owner.
+    access for the owner, Reader on the dev resource group for CI (finds the
+    registry and vault, whose names change with every re-create).
   EOT
   type        = list(string)
   default = [
@@ -125,6 +126,7 @@ variable "assignable_role_names" {
     "Key Vault Crypto Officer",
     "Monitoring Metrics Publisher",
     "Monitoring Data Reader",
+    "Reader",
   ]
 
   validation {

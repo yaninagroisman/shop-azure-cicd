@@ -61,6 +61,17 @@ data "azurerm_user_assigned_identity" "pipeline" {
   resource_group_name = local.bootstrap_resource_group
 }
 
+# CI finds the registry and the vault by listing this resource group: their
+# names carry a random suffix that changes with every re-create. Reader sees
+# metadata only, no secrets, and cannot change anything.
+resource "azurerm_role_assignment" "ci_reader" {
+  scope                = azurerm_resource_group.this.id
+  role_definition_name = "Reader"
+  principal_id         = data.azurerm_user_assigned_identity.pipeline["ci"].principal_id
+  principal_type       = "ServicePrincipal"
+  description          = "CI: discover the registry and Key Vault names in the dev resource group."
+}
+
 module "workload_identity" {
   source   = "../../modules/workload-identity"
   for_each = local.workload_identities

@@ -1,0 +1,237 @@
+# CI/CD for the shop application (AD-29, AD-30, AD-47 ... AD-51).
+#
+#   pull request -> lint, secret scan, unit + browser tests, image build and
+#                   vulnerability scan (nothing is pushed)
+#   main         -> the same, then push to ACR, Cosign signature with the key
+#                   in Key Vault, and the new tag committed to gitops-shop;
+#                   Argo CD deploys it (continuous deployment to dev, AD-49)
+#
+# ~ CodePipeline + CodeBuild with ECR, KMS signing and a GitOps repository.
+# Azure access: service connection sc-azure-ci (workload identity
+# federation, no secrets; usable from main only). GitHub access: the Azure
+# Pipelines GitHub App (read) and an SSH deploy key for gitops-shop (write).
+#
+# One-time setup (manual; Terraform cannot create these):
+#  1. GitHub App: Azure DevOps -> Pipelines -> New pipeline -> GitHub ->
+#     install "Azure Pipelines" on yaninagroisman/shop-azure-cicd only ->
+#     "Existing Azure Pipelines YAML file" -> /.azure-pipelines/ci.yml.
+#  2. Deploy key: ssh-keygen -t ed25519 -N "" -C shop-ci -f gitops-shop-deploy-key
+#     - GitHub gitops-shop -> Settings -> Deploy keys -> add the .pub,
+#       tick "Allow write access";
+#     - Azure DevOps -> Pipelines -> Library -> Secure files -> upload
+#       gitops-shop-deploy-key (private) and allow this pipeline to use it;
+#     - pipeline variable gitopsDeployKeyPublic = contents of the .pub;
+#     - delete both local files.
+#  3. Terraform applied (bootstrap: Reader in the allow-list; dev: the
+#     environment exists), otherwise the push step stops with a message.
+
+trigger:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - api
+      - client
+      - ruff.toml
+      - .azure-pipelines/ci.yml
+
+pr:
+  branches:
+    include: [main]
+  paths:
+    include:
+      - api
+      - client
+      - ruff.toml
+      - .azure-pipelines/ci.yml
+
+pool:
+  vmImage: ubuntu-24.04
+
+variables:
+  isMain: ${{ eq(variables['Build.SourceBranch'], 'refs/heads/main') }}
+  pythonVersion: "3.12"
+  # Tool versions are pinned; upgrade them in a pull request.
+  ruffVersion: 0.17.6
+  hadolintVersion: v2.15.1
+  gitleaksVersion: v8.30.1
+  trivyVersion: 0.76.2
+  cosignVersion: v3.1.6
+  kustomizeVersion: v5.8.3
+  # Where the environment lives (names inside it change with every re-create).
+  resourceGroup: rg-shop-dev-swc
+  signingKeyName: cosign
+  gitopsRepo: git@github.com:yaninagroisman/gitops-shop.git
+  # GitHub's published SSH host key (https://api.github.com/meta).
+  githubKnownHosts: github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+
+stages:
+  # ---------------------------------------------------------------------------
+  - stage: Validate
+    jobs:
+      - job: Lint
+        displayName: Lint and secret scan
+        steps:
+          - checkout: self
+            fetchDepth: 0 # Gitleaks scans the commits of the run
+          - script: |
+              set -euo pipefail
+              # Pull request: only the new commits; main: the pushed commits.
+              if [ "$(Build.Reason)" = "PullRequest" ]; then
+                range="origin/$(System.PullRequest.TargetBranchName)..HEAD"
+              else
+                range="HEAD~1..HEAD"
+              fi
+              docker run --rm -v "$PWD:/repo" -w /repo \
+                "zricethezav/gitleaks:$(gitleaksVersion)" \
+                git --no-banner --redact --log-opts="$range" .
+            displayName: Gitleaks (secrets in new commits)
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - script: |
+              set -euo pipefail
+              pip install --quiet "ruff==$(ruffVersion)"
+              ruff check api client
+            displayName: ruff
+          - script: |
+              set -euo pipefail
+              for f in api/Dockerfile client/Dockerfile; do
+                docker run --rm -i "hadolint/hadolint:$(hadolintVersion)" < "$f"
+              done
+            displayName: hadolint
+
+      - job: Test
+        displayName: Unit tests
+        strategy:
+          matrix:
+            api: { component: api }
+            client: { component: client }
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: $(pythonVersion)
+          - script: |
+              set -euo pipefail
+              pip install --quiet -r requirements-dev.txt
+              if [ "$(component)" = "client" ]; then
+                # Browser smoke tests (headless Chromium).
+                python -m playwright install --with-deps chromium
+              fi
+              python -m pytest -q --junitxml=test-results.xml
+            workingDirectory: $(component)
+            displayName: pytest
+          - task: PublishTestResults@2
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFiles: $(component)/test-results.xml
+              testRunTitle: $(component)
+
+  # ---------------------------------------------------------------------------
+  - stage: Build
+    dependsOn: Validate
+    jobs:
+      - job: Image
+        displayName: Build, scan, push, sign
+        strategy:
+          matrix:
+            api: { component: api, image: shop-api }
+            client: { component: client, image: shop-client }
+        steps:
+          - script: |
+              set -euo pipefail
+              tag="$(echo "$(Build.SourceVersion)" | cut -c1-12)"
+              echo "##vso[task.setvariable variable=tag]$tag"
+              docker build \
+                --build-arg VERSION="$tag" \
+                --build-arg VCS_REF="$(Build.SourceVersion)" \
+                --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                -t "$(image):$tag" "$(component)"
+            displayName: docker build
+
+          # ~ ECR enhanced scanning, but before the push and free.
+          - script: |
+              set -euo pipefail
+              docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                "aquasec/trivy:$(trivyVersion)" image \
+                --exit-code 1 --severity CRITICAL,HIGH --ignore-unfixed \
+                --no-progress "$(image):$(tag)"
+            displayName: Trivy (fail on fixable CRITICAL/HIGH)
+
+          - task: AzureCLI@2
+            displayName: Push to ACR and sign with Cosign
+            condition: and(succeeded(), eq(variables.isMain, true))
+            inputs:
+              azureSubscription: sc-azure-ci
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -euo pipefail
+                # Names carry a random suffix: find them (Reader on the RG).
+                acr="$(az acr list -g "$(resourceGroup)" --query '[0].name' -o tsv)"
+                vault="$(az keyvault list -g "$(resourceGroup)" --query '[0].name' -o tsv)"
+                [ -n "$acr" ] && [ -n "$vault" ] || { echo "Environment not found in $(resourceGroup): apply Terraform first." >&2; exit 1; }
+                server="$(az acr show -n "$acr" --query loginServer -o tsv)"
+
+                az acr login -n "$acr"
+                ref="$server/$(image):$(tag)"
+                docker tag "$(image):$(tag)" "$ref"
+                docker push "$ref"
+                digest="$(docker inspect --format '{{index .RepoDigests 0}}' "$ref")"
+
+                curl -sSfL -o cosign "https://github.com/sigstore/cosign/releases/download/$(cosignVersion)/cosign-linux-amd64"
+                curl -sSfL -o checksums.txt "https://github.com/sigstore/cosign/releases/download/$(cosignVersion)/cosign_checksums.txt"
+                grep ' cosign-linux-amd64$' checksums.txt | sed 's/cosign-linux-amd64/cosign/' | sha256sum -c -
+                chmod +x cosign
+
+                # Key never leaves Key Vault (Crypto User: sign only). Classic
+                # signature format without the public Rekor log, which is what
+                # the Kyverno policy verifies (key-based trust only). These
+                # flags are deprecated in cosign 3; the version is pinned.
+                ./cosign sign --yes \
+                  --key "azurekms://$vault.vault.azure.net/$(signingKeyName)" \
+                  --use-signing-config=false --new-bundle-format=false --tlog-upload=false \
+                  "$digest"
+                echo "Signed $digest"
+
+  # ---------------------------------------------------------------------------
+  - stage: Deploy
+    displayName: Update gitops-shop
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables.isMain, true))
+    jobs:
+      - job: Bump
+        displayName: Commit the new image tags
+        steps:
+          - checkout: none
+          # Deploy key with write access to gitops-shop only (AD-48).
+          - task: InstallSSHKey@0
+            inputs:
+              knownHostsEntry: $(githubKnownHosts)
+              # Pipeline variable (public key, not secret), set in the UI.
+              sshPublicKey: $(gitopsDeployKeyPublic)
+              sshKeySecureFile: gitops-shop-deploy-key
+          - script: |
+              set -euo pipefail
+              tag="$(echo "$(Build.SourceVersion)" | cut -c1-12)"
+              curl -sSfL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F$(kustomizeVersion)/kustomize_$(kustomizeVersion)_linux_amd64.tar.gz" | tar xz kustomize
+
+              git clone --depth 1 "$(gitopsRepo)" gitops
+              cd gitops
+              git config user.name "shop-ci"
+              git config user.email "shop-ci@users.noreply.github.com"
+
+              # Only the tag; Argo CD sets the registry host (AD-45).
+              (cd shop && ../../kustomize edit set image "shop-api:$tag" "shop-client:$tag")
+              if git diff --quiet; then
+                echo "Tags already at $tag"; exit 0
+              fi
+              git commit -am "shop: deploy $tag" -m "Source: $(Build.Repository.Uri)/commit/$(Build.SourceVersion)"
+
+              # Another run may have pushed meanwhile: rebase and retry.
+              for attempt in 1 2 3; do
+                git push origin HEAD:main && exit 0
+                git pull --rebase origin main
+              done
+              exit 1
+            displayName: kustomize edit set image + git push
