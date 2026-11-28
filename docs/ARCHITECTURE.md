@@ -1,199 +1,147 @@
 # Architecture
 
 > Status legend used in this file:
-> - **Implemented**: code exists in the repository and was observed working on 2026-11-25.
-> - **Present, not wired**: infrastructure or code exists but is not connected to anything.
-> - **Target (proposed)**: not implemented. It needs an ADR in [DECISIONS.md](DECISIONS.md) before it is built.
+> - **Implemented**: code exists in the repository and its tests pass.
+> - **Written, not yet deployed**: infrastructure or manifests exist and pass static checks (Terraform validate, schema checks, lint) but have not run end to end in Azure.
+> - **On paper**: a design only; nothing is built.
 
-## 1. Repository layout
+## 1. Repositories and layout
+
+The project uses two GitHub repositories (AD-40):
+
+| Repository | Holds |
+|---|---|
+| [`shop-azure-cicd`](https://github.com/yaninagroisman/shop-azure-cicd) (this one) | Application code, Dockerfiles, compose, Terraform, the CI pipeline, documentation |
+| [`gitops-shop`](https://github.com/yaninagroisman/gitops-shop) | Kubernetes desired state, deployed by Argo CD |
 
 ```
-<project root>/
-├── client/                 Frontend / Client Server (Flask + Jinja2 + CSS + vanilla JS): Implemented
-│   ├── tests/              pytest + Playwright suite (64 tests)
-│   ├── requirements-dev.txt pytest, Playwright (dev only)
-│   ├── wsgi.py             app = create_app()
-│   ├── requirements.txt    Flask==3.1.3
-│   └── app/                routes, catalog, money, templates, static (see README.md)
-├── api/                    Backend API + Kafka consumer: skeleton only (written by the owner)
-│   ├── app.py              EMPTY (0 bytes)
-│   ├── consumer.py         EMPTY (0 bytes)
-│   ├── database.py         pymongo helpers: save_purchase(), get_all_purchases()
-│   ├── requirements.txt    EMPTY (pymongo is imported but not declared)
-│   └── Dockerfile          python:3.12-slim, CMD python app.py
-├── compose.yaml            mongodb (mongo:8.0) + kafka (apache/kafka:4.1.2, KRaft): Present, not wired
+shop-azure-cicd/
+├── client/                 Shop front (Flask + Jinja2 + CSS + vanilla JS) and Kafka producer: Implemented
+│   ├── app/                routes (pages, POST /api/buy, GET /api/purchases proxy), catalog, money, templates, static
+│   ├── producer.py         idempotent Kafka producer, waits for its own delivery report
+│   ├── kafka_config.py     Kafka connection settings from env (PLAINTEXT or SASL/SCRAM + TLS)
+│   ├── tests/              75 tests (12 of them Playwright browser tests)
+│   └── Dockerfile          python:3.12 slim, Gunicorn, non-root UID 10001
+├── api/                    Purchases API + Kafka consumer (one image, two commands): Implemented
+│   ├── app.py              GET /purchases, /healthz, /readyz
+│   ├── consumer.py         at-least-once consumer, idempotent insert, retries, dead-letter topic
+│   ├── database.py         MongoDB access and indexes
+│   ├── kafka_config.py     same as in client/
+│   ├── tests/              36 tests
+│   └── Dockerfile          python:3.12 slim, Gunicorn, non-root UID 10001
+├── compose.yaml            local full stack: mongodb, kafka, kafka-init, api, consumer, client: Implemented
+├── ruff.toml               lint rules (ruff 0.17.6 pinned)
+├── .azure-pipelines/ci.yml CI: lint, tests, image build, Trivy, push, Cosign signing, GitOps tag bump: Written, not yet run
+├── terraform/
+│   ├── bootstrap/          remote state, pipeline identities, Azure DevOps project, budget: Applied 2026-11-27
+│   ├── environments/dev/   the whole dev environment (one apply / one destroy): Written, applied once (see §5.6)
+│   └── modules/            network, aks, acr, key-vault, workload-identity, monitoring, gateway-ip, argocd
 ├── docs/                   this documentation
 ├── REPORT.md               detailed Russian work log of the frontend (historical)
-└── optional-concepts/      concept images; tools/ (image pipeline, old checks); source-png/ (masters, git-ignored)
+└── optional-concepts/      concept images and old helper scripts (not deployed)
 ```
 
-The Backend API, MongoDB and Kafka are in the same repository. No other repositories were made available for the audit.
+## 2. Application architecture (implemented)
 
-## 2. Current architecture (as of 2026-11-25)
+Reads are synchronous (the API reads MongoDB). Writes are asynchronous (the shop front publishes to Kafka; a consumer writes to MongoDB). This is the pattern the course requires.
 
 ```mermaid
 flowchart LR
-    subgraph Browser
-        UI[Pages + vanilla JS]
-        SA[ShopAPI seam<br/>static/js/api.js]
-        MOCK[MockShopAPI<br/>mock-api.js<br/>localStorage]
-        BASKET[Basket<br/>localStorage]
-        UI --> BASKET --> SA
-        SA -- API_MODE=mock --> MOCK
-    end
-    subgraph "Client server (Flask)"
-        FL[routes.py<br/>/ · /catalogue · /product/&lt;slug&gt; · /orders]
-        CAT[(catalog.py<br/>13 products, in code)]
-        FL --> CAT
-    end
-    UI -- "GET pages, static" --> FL
-    SA -. "API_MODE=http:<br/>POST /api/buy, GET /api/purchases<br/>→ 404 today" .-> FL
-
-    subgraph "compose.yaml (not connected)"
-        K[(Kafka<br/>topic: purchases)]
-        M[(MongoDB<br/>wizard_shop.purchases)]
-    end
-    API[api/app.py<br/>EMPTY]:::missing
-    CONS[api/consumer.py<br/>EMPTY]:::missing
-    classDef missing stroke-dasharray: 5 5,stroke:#c33;
+    B[Browser] -->|"pages, POST /api/buy,<br/>GET /api/purchases"| C["client<br/>Flask + Gunicorn<br/>Kafka producer"]
+    C -->|"produce key=purchase_id<br/>topic purchases"| K[(Kafka)]
+    K -->|consume| W["consumer<br/>(api image)"]
+    W -->|"insert completed / failed<br/>unique purchase_id"| M[(MongoDB<br/>wizard_shop.purchases)]
+    W -.->|poison messages| DLQ[(purchases.dlq)]
+    C -->|"GET /purchases<br/>(proxy)"| A["api<br/>Flask + Gunicorn"]
+    A -->|"find, newest first,<br/>limit 100"| M
 ```
 
-What actually works:
+Only the client is reachable from outside. The browser calls same-origin `/api/*` URLs, so CSP stays `connect-src 'self'` and no CORS is needed (D-004).
 
-- **Read path (pages):** the browser sends `GET` to Flask, which renders Jinja2 templates using the product data in `catalog.py`. There is no database read.
-- **Write path (orders), mock mode (default):** `ShopAPI.buy()` is answered by `mock-api.js` inside the browser. It stores the order in `localStorage` as `pending` and later flips it to `completed`/`failed`, about 10% failing, after 3–7 s. This imitates the asynchronous flow.
-- **Write path, http mode:** the browser calls same-origin `/api/buy` and `/api/purchases`. Nothing serves them (Flask returns 404), and the UI shows its error states.
-- **Kafka and MongoDB** run as containers. Topic `purchases` (3 partitions) and consumer group `shop-consumers` exist, and `wizard_shop.purchases` holds 1 manual test document. They were created by code that is no longer in the repo. Nothing in the current code talks to them.
-
-## 3. Target architecture (proposed)
-
-The required pattern comes from the course brief:
-
-- **Reads are synchronous:** the API reads MongoDB.
-- **Writes are asynchronous:** the API publishes to Kafka, and a consumer writes to MongoDB.
-
-```mermaid
-flowchart LR
-    B[Browser] -->|HTTPS| C[Client server<br/>Flask + Gunicorn]
-    C -->|"/api/* reverse proxy<br/>(same origin)"| A[Backend API]
-    A -->|"GET: find()"| M[(MongoDB)]
-    A -->|"POST: produce<br/>purchase.requested"| K[(Kafka)]
-    K -->|consume| W[Order consumer]
-    W -->|"upsert by id"| M
-```
-
-Why same-origin `/api/*`: the frontend already calls relative URLs, CSP is `connect-src 'self'`, and no hostnames are hard-coded. Proxying keeps that true and avoids CORS. Whether Flask or a separate reverse proxy does the proxying is open (to decide in P1-14).
-
-### 3.1 Read flow (target)
-
-```mermaid
-sequenceDiagram
-    participant B as Browser (ledger.js / shop.js)
-    participant C as Client server
-    participant A as Backend API
-    participant M as MongoDB
-    B->>C: GET /api/purchases
-    C->>A: proxy
-    A->>M: find({}, sort created_at desc)
-    M-->>A: documents
-    A-->>B: 200 {"purchases": [Purchase…]}
-    Note over B: Polls every POLL_INTERVAL_MS (1500 ms)<br/>while any order is pending
-```
-
-### 3.2 Write flow (target)
+### 2.1 Write flow
 
 ```mermaid
 sequenceDiagram
     participant B as Browser (basket.js)
-    participant A as Backend API
+    participant C as client (POST /api/buy)
     participant K as Kafka (purchases)
-    participant W as Consumer
+    participant W as consumer
     participant M as MongoDB
-    B->>A: POST /api/buy {product_slug, quantity}
-    A->>A: validate slug + qty (1–10), price from catalog (server-side)
-    A->>M: insert {id, status: "pending", …}
-    A->>K: produce key=id, value=PurchaseRequested
-    A-->>B: 202 {"purchase": {status: "pending"}}
-    K->>W: PurchaseRequested
-    W->>M: update id: status completed / failed (+failure_reason, updated_at)
-    W->>K: commit offset (after the DB write)
-    B->>A: GET /api/purchases (poll)
-    A-->>B: status completed → fireworks / failed → reason
+    B->>C: POST /api/buy {product_slug, quantity}
+    C->>C: validate slug and quantity (1–10), price from the catalog
+    C->>K: produce key=purchase_id (acks=all, idempotent)
+    K-->>C: delivery report (waits up to 5 s)
+    C-->>B: 202 {"purchase": {status: "pending", …}}
+    K->>W: purchase message
+    W->>W: business rules → completed, or failed + failure_reason
+    W->>M: insert (duplicate key = already stored)
+    W->>K: commit offset (after the write)
+    B->>C: GET /api/purchases (polls while pending)
 ```
 
-Open design point: the `pending` row could be written by the API (shown above) or by the consumer.
+The consumer writes the order (D-015): there is no `pending` row in MongoDB and no dual write. The browser keeps the `pending` purchase from the 202 until the stored one appears.
 
-- **API writes it:** the order shows up immediately and read-your-writes is consistent. But the API then writes to MongoDB as well as Kafka, which is a dual write. Without an outbox it can leave a `pending` row whose message was never sent.
-- **Consumer writes it:** writes are purely asynchronous. But `GET /api/purchases` may not list the order for a moment. The UI copes, because it tracks the id it got from the 202.
+### 2.2 Read flow
 
-This must be decided in an ADR (proposed **D-015**) together with P1-02.
+```mermaid
+sequenceDiagram
+    participant B as Browser (ledger.js / shop.js)
+    participant C as client
+    participant A as api
+    participant M as MongoDB
+    B->>C: GET /api/purchases
+    C->>A: GET /purchases (timeout 5 s)
+    A->>M: find({}, sort created_at desc, limit 100)
+    M-->>A: documents
+    A-->>B: 200 {"purchases": [Purchase…]}
+    Note over B: polls every POLL_INTERVAL_MS (1500 ms)<br/>while any order is pending
+```
 
-### 3.3 Order status model
+### 2.3 Order status model
 
 ```mermaid
 stateDiagram-v2
     [*] --> sending: browser only
     sending --> pending: 202 accepted
     sending --> error: HTTP/network error (UI only, not stored)
-    pending --> completed: consumer processed
-    pending --> failed: consumer rejected (failure_reason)
+    pending --> completed: consumer stored it
+    pending --> failed: consumer rejected it (failure_reason)
     completed --> [*]
     failed --> [*]
 ```
 
-`sending` and `error` exist only in the UI. Only `pending`, `completed` and `failed` are stored.
+`sending`, `error` and `pending` exist only in the browser. MongoDB stores `completed` and `failed`.
 
-### 3.4 Kafka (target)
+### 2.4 Kafka
 
-| Item | Proposal | Today |
-|---|---|---|
-| Topic | `purchases` | exists: 3 partitions, RF 1 |
-| Producer | Backend API, `POST /api/buy` | none in repo |
-| Consumer group | `shop-consumers` | group exists, no code |
-| Message key | purchase `id`, so all events for an order stay ordered on one partition | — |
-| Value | JSON `PurchaseRequested` (below) | — |
-| Delivery | at-least-once: commit the offset after the DB write | — |
+| Item | Value |
+|---|---|
+| Topics | `purchases` (3 partitions), `purchases.dlq` (1 partition); auto-creation disabled |
+| Producer | client, `POST /api/buy`: `acks=all`, `enable.idempotence=true`, 5 s delivery timeout → 503 |
+| Consumer group | `purchase-consumers` |
+| Message key | `purchase_id`, so every event of an order lands on one partition |
+| Delivery | at least once: the offset is committed only after the message is handled |
+| Security | local: PLAINTEXT. AKS: TLS listener 9093 with SCRAM-SHA-512 users and ACLs (AD-23), settings from env (`kafka_config.py`) |
 
-```jsonc
-// PurchaseRequested (proposed, v1)
-{
-  "schema": 1,
-  "id": "9f1c…",              // generated by the API (UUID4 hex); idempotency key
-  "product_slug": "pocket-fluffs",
-  "product_name": "Pocket Fluffs",
-  "quantity": 2,
-  "unit_price": 300,           // Pips, priced by the server, never by the browser
-  "total_price": 600,
-  "created_at": "2026-11-25T10:00:00Z"
-}
-```
+### 2.5 Error handling and idempotency
 
-### 3.5 Error handling, retries, idempotency, consistency (target)
+- **Idempotency:** a unique index on `purchase_id`. A redelivered message raises `DuplicateKeyError`, which counts as handled.
+- **Business-rule failures** (unknown product, bad quantity): stored as `failed` with `failure_reason`; the shopper sees the reason in the Ledger.
+- **Poison messages** (not JSON, no `purchase_id`, rejected by MongoDB): copied to `purchases.dlq`, then committed, so a partition never blocks.
+- **Transient failures** (MongoDB or Kafka down): exponential backoff up to 30 s, seek back to the same message, keep polling so the consumer stays in its group.
+- **Health:** api `/healthz` (process up) and `/readyz` (MongoDB answers); client `/healthz`; the consumer touches a heartbeat file that its probe checks.
 
-- **Idempotency:** the consumer updates or upserts by `id` (unique index), so a redelivered message never creates a second order.
-- **Retries:**
-  - Transient DB errors: retry with backoff inside the consumer, and do not commit the offset.
-  - Poison messages (invalid schema): mark the order `failed` with a reason, or send the message to a dead-letter topic (`purchases.dlq`, to be decided).
-  - The browser never retries `POST /api/buy` automatically. The user can retry by placing a new order.
-- **Consistency:** eventual. The UI already polls until the order reaches a final state.
-- **Ordering:** guaranteed per order, because messages are keyed by id. There is no global ordering, and none is needed.
-- **Failure scenarios to test:**
+| Failure | Behaviour |
+|---|---|
+| Kafka down at `POST /api/buy` | 503 `{"error": "Purchase service unavailable"}`; the UI shows the error |
+| Consumer down | orders stay `pending` in the browser; they are stored when it restarts |
+| MongoDB down at `GET` | 503; the Ledger shows its error banner |
+| Duplicate delivery | no duplicate document |
+| Invalid slug or quantity | 400 or 404 from `POST /api/buy` |
 
-  | Failure | Expected behaviour |
-  |---|---|
-  | Kafka down at `POST` | 503 JSON error; the UI shows the error state |
-  | Consumer down | Orders stay `pending`; they complete when it restarts |
-  | MongoDB down at `GET` | 503; the Ledger shows its error banner |
-  | Duplicate delivery | No duplicate rows |
-  | Invalid slug or quantity | 400 |
+## 3. Local deployment (implemented)
 
-### 3.6 Security boundaries
-
-See [SECURITY.md](SECURITY.md). In short:
-
-- Only the client server is public.
-- The API, Kafka and MongoDB stay on a private network.
-- The browser is untrusted. Prices, game scores and basket contents must be checked or recomputed server-side.
+`docker compose up` starts the whole stack (see [DEPLOYMENT.md](DEPLOYMENT.md) §1): `mongodb`, `kafka` (KRaft, single node), the one-shot `kafka-init` that creates the topics, `api`, `consumer` and `client` (published on port 8080). Every service has a health check, and `depends_on` conditions order the start. Kafka and MongoDB publish no host ports.
 
 ## 4. Frontend internals (implemented)
 
@@ -210,3 +158,142 @@ See [SECURITY.md](SECURITY.md). In short:
 | Ledger (`/orders`) | `static/js/ledger.js` |
 | Door mini-game | `static/js/game.js`, `templates/partials/game.html` |
 | Visual effects and easter eggs | `static/js/magic.js`, `static/js/effects.js` |
+
+## 5. Azure architecture (written, not yet deployed end to end)
+
+All decisions are in [DECISIONS.md](DECISIONS.md) (AD-xx).
+
+### 5.1 Overview
+
+```mermaid
+flowchart TB
+    subgraph GitHub
+        APP[shop-azure-cicd<br/>code + Terraform]
+        GO[gitops-shop<br/>Kubernetes manifests]
+    end
+    subgraph ADO[Azure DevOps project shop]
+        CI[CI pipeline<br/>.azure-pipelines/ci.yml]
+    end
+    subgraph Boot[rg-shop-bootstrap-swc]
+        ST[(Storage account<br/>Terraform state)]
+        ID[Managed identities<br/>tf-plan · tf-apply · ci]
+    end
+    subgraph Dev[rg-shop-dev-swc]
+        ACR[(ACR Basic)]
+        KV[(Key Vault<br/>Cosign key, MongoDB passwords)]
+        PIP[Public IP + DNS label]
+        subgraph AKS[AKS aks-shop-dev-swc]
+            ARGO[Argo CD]
+            WL[Gateway · Kafka · MongoDB · shop]
+        end
+        MON[Log Analytics +<br/>Managed Prometheus + alerts]
+    end
+    APP -->|push / PR| CI
+    CI -->|"push image, sign<br/>(WIF as id-shop-ci)"| ACR
+    CI -->|Cosign sign| KV
+    CI -->|"bump image tag<br/>(SSH deploy key)"| GO
+    ARGO -->|pull| GO
+    ARGO --> WL
+    WL -->|pull signed images| ACR
+    WL -->|CSI + workload identity| KV
+    PIP --> WL
+    AKS --> MON
+    TF[terraform apply<br/>owner's laptop] --> Dev
+    TF --> ST
+```
+
+### 5.2 Terraform stacks
+
+| Stack | Lifetime | Creates |
+|---|---|---|
+| `bootstrap/` | Once, kept for the whole project | State storage (Entra ID only, ZRS, versioning, lock); managed identities `id-shop-tf-plan`, `id-shop-tf-apply`, `id-shop-ci` federated with Azure DevOps service connections (no secrets); `tf-apply` gets Contributor + RBAC Administrator limited by an ABAC allow-list of roles; Azure DevOps project, service connections, environment `dev` with approval; budget |
+| `environments/dev/` | One apply / one destroy | Resource group, VNet + NSG, AKS, ACR, Key Vault (Cosign key, MongoDB passwords), workload identities (api, consumer, mongodb, kyverno), monitoring, Gateway public IP, Argo CD extension, root Application |
+
+Details: [terraform/bootstrap/README.md](../terraform/bootstrap/README.md), [terraform/environments/dev/README.md](../terraform/environments/dev/README.md).
+
+### 5.3 Inside the cluster
+
+| Namespace | Contents | Source in `gitops-shop` |
+|---|---|---|
+| `argocd` | Argo CD (AKS extension) and the root Application | Terraform |
+| `cert-manager` | cert-manager v1.21.3, Gateway API support | `apps/templates/cert-manager.yaml` (upstream chart) |
+| `strimzi` | Strimzi operator 1.3.1, watches `kafka` and `shop` | `apps/templates/strimzi.yaml` (upstream chart) |
+| `kyverno` | Kyverno 1.20 (chart 3.10.0) with workload identity for ACR | `apps/templates/kyverno.yaml` (upstream chart) |
+| `gateway` | Gateway `shop` (HTTP 80 → redirect, HTTPS 443), Let's Encrypt ClusterIssuers | `platform/gateway/` |
+| `kafka` | Kafka `shop-kafka` 4.3.2 (one KRaft node, TLS + SCRAM, ACLs), topics, entity operator | `platform/kafka/` |
+| `shop` | client, api, consumer (KEDA 1–3 replicas on lag), MongoDB StatefulSet, KafkaUsers, SecretProviderClasses, HTTPRoute | `shop/`, `platform/mongodb/` |
+| cluster-wide | Image signature verification, NetworkPolicies, Kafka CA copy into `shop` | `platform/policies/`, `platform/kafka/cluster-ca-to-shop.yaml` |
+
+```mermaid
+flowchart LR
+    U[Internet] -->|"80/443<br/>shop-dev-&lt;suffix&gt;.swedencentral.cloudapp.azure.com"| GW[Gateway shop<br/>ns gateway]
+    GW -->|HTTPRoute :5000| CL[client]
+    CL -->|":5000"| API[api]
+    CL -->|"TLS 9093, SCRAM user shop-client"| KF[(Kafka shop-kafka<br/>ns kafka)]
+    KF --> CO[consumer]
+    CO -->|"SCRAM user shop-consumer"| KF
+    API -->|27017| MG[(MongoDB rs0)]
+    CO -->|27017| MG
+    KEDA[KEDA] -.->|reads lag| KF
+    KEDA -.->|scales 1–3| CO
+```
+
+Every arrow is an explicit NetworkPolicy rule; everything else is denied (AD-43).
+
+### 5.4 Delivery (GitOps)
+
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub (shop-azure-cicd)
+    participant CI as Azure Pipelines
+    participant ACR as ACR
+    participant KV as Key Vault (cosign key)
+    participant GO as gitops-shop
+    participant AR as Argo CD
+    participant KY as Kyverno
+    Dev->>GH: pull request
+    GH->>CI: Validate (Gitleaks, ruff, hadolint, pytest) + Build (docker, Trivy)
+    Dev->>GH: merge to main
+    GH->>CI: same checks, then push and sign
+    CI->>ACR: push shop-api / shop-client:<sha12>
+    CI->>KV: Cosign sign (key never leaves Key Vault)
+    CI->>GO: kustomize edit set image … :<sha12>, push main
+    AR->>GO: detects the commit
+    AR->>KY: apply Deployments
+    KY->>ACR: verify signature, pin tag → digest
+    KY-->>AR: admitted (unsigned images are denied)
+```
+
+### 5.5 Identities and secrets
+
+| Who | How it authenticates | What it can do |
+|---|---|---|
+| Azure Pipelines (`ci`) | Workload identity federation, no secret | AcrPush, Crypto User on the Cosign key only, Reader on the dev resource group |
+| Azure Pipelines → `gitops-shop` | SSH deploy key (Secure File) | Push to that repository only |
+| `tf-plan` / `tf-apply` | Workload identity federation | Read-only / Contributor + limited role assignment |
+| Pods api, consumer, mongodb | Workload identity (federated ServiceAccount) | Read their MongoDB secret(s) in Key Vault |
+| Kyverno | Workload identity | AcrPull (to read signatures) |
+| Kafka clients | SCRAM users created by Strimzi; passwords only in Kubernetes Secrets | ACLs per user: client writes `purchases`; consumer reads `purchases`, writes `purchases.dlq` |
+| People | Entra ID (no local accounts) | Cluster admin through Azure RBAC; API server only from the allow-listed IP |
+
+### 5.6 Deployment status
+
+- `bootstrap/` was applied on 2026-11-27 and is in use.
+- `environments/dev/` was applied once on 2026-11-28: 57 of 58 resources were created. The root Application could not be applied because the cluster had no free CPU (capacity finding in [DECISIONS.md](DECISIONS.md)). The environment was destroyed the same day.
+- The GitOps manifests and the CI pipeline have passed static checks only (kustomize build, kubeconform against Kubernetes 1.33 plus CRD schemas, `helm lint`, hadolint, Gitleaks); they have not run in Azure.
+
+## 6. Production design (on paper)
+
+What a production environment would change, if quota and budget allowed:
+
+| Area | dev | production design |
+|---|---|---|
+| Cluster | 1 pool, 2 × D2ads_v5, Free tier | Standard tier (SLA), system pool + user pool across 3 zones, cluster autoscaler, automatic patch upgrades with surge |
+| API server | public + IP allow-list | private cluster or API Server VNet Integration, access through a jumpbox/VPN |
+| Kafka | 1 node, RF 1 | 3 brokers + 3 controllers across zones, RF 3, `min.insync.replicas` 2 |
+| MongoDB | 1-member replica set, no backup | 3-member replica set across zones, scheduled backups, or a managed service |
+| ACR | Basic | Premium: private endpoint, geo-replication, retention policy |
+| Key Vault | public endpoint, RBAC | private endpoint, purge protection |
+| Delivery | direct push to `main`, automatic | promotion through pull requests per environment, manual approval for production |
+| Observability | 30-day logs, 0.25 GB/day cap | longer retention, dashboards and SLO alerts |

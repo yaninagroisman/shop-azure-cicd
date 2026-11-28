@@ -1,62 +1,73 @@
 # Testing
 
-## Current state
+## Current state (2026-11-28)
 
-**Client test suite: `client/tests/`, 64 tests, all passing on 2026-11-25 (21.7 s).** Backend tests do not exist yet; the owner is writing the backend (P1-12 stays `IN_PROGRESS`).
+| Suite | Tests | Result |
+|---|---:|---|
+| `api/tests/` | 36 | all pass (0.2 s) |
+| `client/tests/` | 75 | 63 pass; the 12 Playwright browser tests are skipped when Chromium is not installed (they run in CI) |
 
 ```bash
+# API and consumer
+cd api
+pip install -r requirements-dev.txt
+pytest
+
+# Shop front and producer
 cd client
-pip install -r requirements-dev.txt     # pytest, Playwright (dev only)
-playwright install chromium             # once
+pip install -r requirements-dev.txt
+playwright install chromium             # once, for the browser tests
 pytest                                  # everything
-pytest -m "not browser"                 # fast tests only, no browser needed
+pytest -m "not browser"                 # fast tests only
 ```
 
-If Playwright or Chromium is missing, the browser tests are **skipped**. They do not fail, so check the summary line.
+If Playwright or Chromium is missing, the browser tests are **skipped**, not failed: check the summary line.
+
+The unit tests need neither Kafka nor MongoDB: Kafka producers and consumers and the MongoDB collection are replaced by fakes.
+
+## What the tests cover
+
+### `api/tests/`
+
+| File | Covers |
+|---|---|
+| `test_app.py` | `GET /purchases` returns the list; MongoDB down → 503 JSON; `/healthz` does not touch MongoDB; `/readyz` up and down; the listing limit |
+| `test_consumer.py` | parsing valid and poison messages; valid order stored as `completed`; business-rule violation stored as `failed` with a reason; duplicate delivery treated as done; poison message and MongoDB-rejected document go to the DLQ and are not saved; MongoDB down and DLQ delivery error/timeout are transient (retried); exponential capped backoff; heartbeat file |
+| `test_kafka_config.py` | PLAINTEXT default; SASL/SCRAM + TLS settings from env; missing username or password and unknown protocol are rejected |
+
+### `client/tests/`
 
 | File | Covers |
 |---|---|
 | `test_money.py` | coinage ratios, `split_pips` ↔ `to_pips` round trip |
-| `test_catalog.py` | 13 unique slugs, complete fields, integer prices, valid categories, every 1600 px and 640 px image (including the `--box/--violet/--pink`, `--extended` and `--open` frames) exists, related products |
-| `test_pages.py` | every page (including all 13 product pages) returns 200 with the brand; unknown product returns 404; security headers; no inline `<script>`; `API_MODE` reaches the page; versioned static URLs |
-| `test_browser.py` | headless Chromium against a live server in mock mode: no JS errors and no broken images on 5 pages (under the strict CSP); no horizontal scroll at 390 px on 4 pages; basket add → quantity → remove → checkout → delivered → Ledger entry; door game opens, an item is caught, the game closes and the door shuts; catalogue search, empty state, reset, shelf filter and price sort |
+| `test_catalog.py` | 13 unique slugs, complete fields, integer prices, valid categories, every 1600 px and 640 px image exists, related products |
+| `test_pages.py` | every page (all 13 product pages) returns 200; unknown product 404; security headers; no inline `<script>`; `API_MODE` reaches the page; versioned static URLs |
+| `test_producer.py` | the message is keyed by `purchase_id`; delivery error and missing delivery report raise; `/healthz` |
+| `test_kafka_config.py` | same cases as in `api/` (the module is duplicated in both images) |
+| `test_browser.py` | headless Chromium against a live server in mock mode: no JS errors or broken images on 5 pages under the strict CSP; no horizontal scroll at 390 px; basket → checkout → delivered → Ledger; the door game; catalogue search, filter and sort |
 
 The interaction tests open their page with `bypass_csp=True`, because Playwright's `wait_for_function` evaluates strings and the shop's CSP forbids that. The error checks use pages with the normal CSP.
 
-The older ad-hoc check scripts are kept in `optional-concepts/tools/checks/` for reference.
+## Static checks
 
-## Manual checks run on 2026-11-25 (initial audit, before the suite existed)
-
-The checks ran against the preview container (`API_MODE=mock`, port 8000) unless noted.
-
-| Check | Result |
-|---|---|
-| HTTP status: `/`, `/catalogue`, `/orders`, `/product/pocket-fluffs`, `/product/bumble-fizzies` | 200 |
-| Unknown product `/product/nope` | 404 |
-| `/api/purchases` | 404, because no backend exists |
-| Security headers present (CSP, nosniff, Referrer-Policy) | ✓ |
-| `eggs.py`: broken images, mobile menu, mobile horizontal overflow (4 pages), Tuckbox tap, reduced motion, JS errors | 0 broken images, menu opens, no overflow, reduced motion OK, **0 JS errors** |
-| `basket_test.py`: add 3 lines → total 9 G 5 S 6 P → remove 1 → checkout → accepted → delivered → 2 Ledger entries | ✓, 0 JS errors |
-| `gametest.py`: desktop and mobile rounds, scoring, result, best score, close and restore | ✓, 0 JS errors on both |
-| `navcheck.py`: page transitions and back navigation | ✓, 0 errors |
-| `API_MODE=http` (temporary container on port 8001) | Page renders with `data-api-mode="http"`; `POST /api/buy` → 404 |
-| Kafka: `kafka-topics --list` | `purchases` exists; consumer groups: `shop-consumers` and one console consumer |
-| MongoDB: `wizard_shop.purchases` | 1 test document (schema mismatch, see DATABASE.md) |
-
-Not run today:
-
-- every product's demo button;
-- the full easter-egg set.
-
-Catalogue search, filter and sort are now covered by the suite. The other two passed in earlier sessions, as recorded in `REPORT.md` §0.8 and §9.
-
-## Still to add (P1-12)
-
-| Layer | Tool | Covers |
+| Check | Command | Runs in CI |
 |---|---|---|
-| API unit | pytest | validation, server-side pricing, error JSON |
-| Consumer | pytest with a fake Kafka message | idempotent upsert, failed path |
-| Integration | `docker compose` + pytest | `POST` → Kafka → consumer → `GET` shows `completed` |
-| Browser, http mode | Playwright | the same purchase flow against the real API |
+| Python lint | `ruff check .` (version pinned in `ruff.toml`) | yes |
+| Dockerfile lint | `hadolint api/Dockerfile client/Dockerfile` | yes |
+| Secret scan | `gitleaks` over the change (full history scanned 2026-11-28: 0 findings) | yes |
+| Image vulnerabilities | Trivy, fails on fixable CRITICAL/HIGH | yes |
+| Terraform | `terraform fmt -check`, `terraform validate` in both stacks | not yet (no Terraform pipeline) |
+| GitOps manifests | `kustomize build`, kubeconform (Kubernetes 1.33 + CRD schemas of Strimzi, Kyverno, cert-manager, Gateway API, CSI, KEDA, Cilium), `helm lint apps/` | not yet (run by hand on 2026-11-28) |
 
-Every test must run with one command and in CI (P2-06).
+## CI
+
+`.azure-pipelines/ci.yml` runs on every pull request and on `main`: Gitleaks, ruff, hadolint, pytest for api and client (Chromium installed, so the browser tests run), then image builds and Trivy. A failing test fails the pipeline. The pipeline has not yet run in Azure DevOps (it needs the one-time setup in [DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
+
+## Not yet tested
+
+| Layer | How | Status |
+|---|---|---|
+| End-to-end in compose: purchase → Kafka → consumer → Ledger | `docker compose up`, then a purchase in the browser | the stack was built to do this; no run is recorded in the repository |
+| End-to-end on AKS | the checks in [DEPLOYMENT.md](DEPLOYMENT.md) §2.6 | blocked by the 4 vCPU quota |
+| Browser tests in `http` mode against the real API | Playwright + compose | not written |
+| Integration test through a real Kafka broker | testcontainers or compose in CI | not written |

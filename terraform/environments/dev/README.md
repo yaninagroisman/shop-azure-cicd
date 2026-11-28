@@ -5,9 +5,11 @@ it, one `terraform destroy` removes it** (AD-31); nothing here is meant to
 survive a destroy. The state lives in the bootstrap storage account
 (`dev.tfstate`).
 
-Status: sub-stages **2a** (network + AKS), **2b** (ACR, Key Vault, workload
-identities), **2c** (monitoring) and **2d** (Gateway public IP, Argo CD) are
-written. Nothing is applied yet.
+Status (2026-11-28): sub-stages **2a** (network + AKS), **2b** (ACR, Key
+Vault, workload identities), **2c** (monitoring) and **2d** (Gateway public
+IP, Argo CD) are written. The first apply created 57 of 58 resources and
+stopped at the root Application: the nodes had no free CPU (see "Quota"
+below). The environment was destroyed afterwards.
 
 ## What 2a creates
 
@@ -16,7 +18,7 @@ written. Nothing is applied yet.
 | `rg-shop-dev-swc` | Resource group for this environment |
 | `vnet-shop-dev-swc` 10.10.0.0/16, `snet-aks-nodes` 10.10.0.0/22 | Nodes only: pods use the overlay range 192.168.0.0/16 |
 | `nsg-shop-dev-swc-aks-nodes` | Inbound 80/443 from the Internet; Azure defaults allow VNet and load balancer probes and deny the rest |
-| `aks-shop-dev-swc` | Kubernetes 1.36, Free tier, 2 x Standard_D2ads_v5 (Azure Linux 3, ephemeral OS disk), CNI Overlay + Cilium, Entra ID + Azure RBAC, no local accounts, API server IP allow-list, OIDC + Workload Identity, Key Vault CSI driver, KEDA, Image Cleaner, run command off, no automatic upgrades |
+| `aks-shop-dev-swc` | Kubernetes 1.36, Free tier, 2 x Standard_D2ads_v5 (Azure Linux 3, ephemeral OS disk), CNI Overlay + Cilium, Entra ID + Azure RBAC, no local accounts, API server IP allow-list, OIDC + Workload Identity, Key Vault CSI driver, KEDA, Image Cleaner, run command on (root Application, AD-39), no automatic upgrades |
 | App Routing Gateway API | Managed Gateway API CRDs + Istio-based implementation (`approuting-istio`), enabled through `azapi_update_resource` because azurerm has no argument for it |
 | `id-aks-shop-dev-swc-control-plane`, `-kubelet` | Created before the cluster with their roles (Network Contributor on the subnet, Managed Identity Operator on the kubelet identity) |
 | `rg-shop-dev-swc-aks-nodes` | Created and owned by AKS (VM scale set, load balancer, disks) |
@@ -102,14 +104,27 @@ terraform destroy                              # removes the whole environment
 that runs it: the root Application is applied through `az aks command
 invoke`. In Azure Pipelines run Terraform inside an `AzureCLI@2` task.
 
+The script starts the command with `--no-wait` and polls `az aks command
+result`, so a failure shows its real reason (for example `Unschedulable`);
+waiting inside `az aks command invoke` reports such failures only as
+"Operation returned an invalid status 'OK'" (Azure CLI 2.93). Use an IPv4
+address in `api_server_authorized_ip_ranges` (`curl -4 https://ifconfig.me`).
+
 When your public IP changes, update `api_server_authorized_ip_ranges` and
 apply again, otherwise `kubectl` is refused.
 
 ## Known limits and accepted risks
 
-- **Quota:** 2 x D2ads_v5 uses the whole 4 vCPU Free Trial quota. Anything
-  that adds a node (surge upgrades, node pool rotation, a second pool) fails:
-  change the cluster by destroy + apply.
+- **Quota (blocking):** 2 x D2ads_v5 uses the whole 4 vCPU Free Trial
+  quota and gives 3.8 allocatable vCPU. The AKS add-ons alone request almost
+  all of it (system pods ~1330m, monitoring agents ~1006m, Argo CD ~620m,
+  KEDA ~420m, istiod 2 x 500m), so the Run Command pod of the root
+  Application and the workloads cannot be scheduled. Either reduce the
+  add-ons (lighter Gateway API controller, less monitoring, self-managed
+  KEDA) or raise the quota (Pay-As-You-Go, 2 x D4ads_v5); see
+  docs/DECISIONS.md, "Capacity finding". Anything that adds a node (surge
+  upgrades, node pool rotation, a second pool) also fails: change the
+  cluster by destroy + apply.
 - **No automatic upgrades:** every new apply gets the latest 1.36 patch and
   node image. A cluster left running for weeks does not get security patches
   by itself: destroy and re-create it instead.
