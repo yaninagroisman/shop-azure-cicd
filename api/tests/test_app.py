@@ -1,9 +1,8 @@
 """Unit tests for the API endpoints (MongoDB is replaced by monkeypatching)."""
-import pytest
-from pymongo.errors import ServerSelectionTimeoutError
-
 import app as api
 import database
+import pytest
+from pymongo.errors import ServerSelectionTimeoutError
 
 
 @pytest.fixture()

@@ -1,9 +1,8 @@
 """Unit tests for the Kafka producer helper and the /healthz probe (no broker needed)."""
 import json
 
-import pytest
-
 import producer
+import pytest
 
 
 class FakeProducer:

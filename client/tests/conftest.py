@@ -7,7 +7,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # client/ on the path
 
-from app import create_app  # noqa: E402
+from app import create_app
 
 
 @pytest.fixture(scope="session")
@@ -40,7 +40,7 @@ def browser():
     with sync_api.sync_playwright() as p:
         try:
             b = p.chromium.launch()
-        except Exception as exc:  # browser binary missing
+        except Exception as exc:  # noqa: BLE001 - any launch failure (missing binary or system libraries) means skip
             pytest.skip(f"Chromium is not available: run `playwright install chromium` ({exc})")
         yield b
         b.close()

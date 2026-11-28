@@ -5,14 +5,16 @@
     /product/<slug>     one product
     /orders             purchase history, "The Mischief Ledger" (filled in by static/js/ledger.js)
 """
-from flask import Blueprint, abort, render_template, request, jsonify
-from .catalog import CATEGORIES, PRODUCTS, get_product, related_products
-from uuid import uuid4
-from datetime import datetime, timezone
-from producer import send_purchase
-from confluent_kafka import KafkaException
 import os
+from datetime import UTC, datetime
+from uuid import uuid4
+
 import requests
+from confluent_kafka import KafkaException
+from flask import Blueprint, abort, jsonify, render_template, request
+from producer import send_purchase
+
+from .catalog import CATEGORIES, PRODUCTS, get_product, related_products
 
 API_URL = os.getenv("API_URL", "http://api:5000")
 bp = Blueprint("shop", __name__)
@@ -76,7 +78,7 @@ def buy():
     if type(quantity) is not int or not 1 <= quantity <= 10:
         return jsonify({"error": "Invalid quantity"}), 400
     purchase_id = str(uuid4())
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     purchase = {
         "id": purchase_id,

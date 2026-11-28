@@ -1,7 +1,6 @@
+import database
 from flask import Flask, jsonify
 from pymongo.errors import PyMongoError
-
-import database
 
 app = Flask(__name__)
 

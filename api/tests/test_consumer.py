@@ -1,10 +1,9 @@
 """Unit tests for the consumer's message handling (no Kafka or MongoDB needed)."""
 import json
 
+import consumer
 import pytest
 from pymongo.errors import DuplicateKeyError, ServerSelectionTimeoutError, WriteError
-
-import consumer
 
 
 class FakeMessage:

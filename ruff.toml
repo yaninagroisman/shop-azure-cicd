@@ -1,0 +1,5 @@
+# Python lint for api/ and client/ (CI, AD-50). Ruff's default rule set is
+# used as is; the version is pinned so a new ruff release cannot change the
+# rules under CI by surprise. Upgrade both here and in the pipeline.
+required-version = "==0.17.6"
+target-version = "py312"

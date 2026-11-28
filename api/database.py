@@ -1,4 +1,5 @@
 import os
+
 from pymongo import ASCENDING, DESCENDING, MongoClient
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongodb:27017")

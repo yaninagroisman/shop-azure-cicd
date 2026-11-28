@@ -1,5 +1,4 @@
 import pytest
-
 from app.catalog import PRODUCTS
 
 PAGES = ["/", "/catalogue", "/orders"] + [f"/product/{p['slug']}" for p in PRODUCTS]
