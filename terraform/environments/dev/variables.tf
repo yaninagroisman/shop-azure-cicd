@@ -129,3 +129,53 @@ variable "cluster_admin_object_ids" {
     error_message = "At least one cluster admin is required: local accounts are disabled, so nobody else could log in."
   }
 }
+
+# --- Monitoring (AD-26): minimal defaults for a short-lived environment ------
+
+variable "log_retention_days" {
+  description = "Log Analytics retention in days (30 = minimum, no extra cost)."
+  type        = number
+  default     = 30
+}
+
+variable "log_daily_quota_gb" {
+  description = "Daily log ingestion cap in GB; logs stop for the rest of the day when reached. Raise it when debugging needs more."
+  type        = number
+  default     = 0.25
+}
+
+variable "log_collection_interval" {
+  description = "Container Insights collection interval (1m-30m)."
+  type        = string
+  default     = "5m"
+}
+
+variable "log_namespaces" {
+  description = "Namespaces whose logs and events go to Log Analytics (the application and Kafka)."
+  type        = list(string)
+  default     = ["shop", "kafka"]
+}
+
+variable "alert_emails" {
+  description = "Email addresses for alerts. Keep real addresses in terraform.tfvars (git-ignored)."
+  type        = list(string)
+}
+
+# --- GitOps (AD-39, AD-40) ---------------------------------------------------
+
+variable "gitops_repo_url" {
+  description = "HTTPS URL of the separate GitOps repository Argo CD follows (public, no credentials)."
+  type        = string
+}
+
+variable "gitops_repo_revision" {
+  description = "Branch, tag or commit of the GitOps repository."
+  type        = string
+  default     = "main"
+}
+
+variable "gitops_repo_path" {
+  description = "Folder in the GitOps repository with the child Application manifests (app of apps)."
+  type        = string
+  default     = "apps"
+}

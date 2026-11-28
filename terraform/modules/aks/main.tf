@@ -91,8 +91,11 @@ resource "azurerm_kubernetes_cluster" "this" {
     authorized_ip_ranges = var.api_server_authorized_ip_ranges
   }
 
-  # `az aks command invoke` would bypass the IP allow-list.
-  run_command_enabled = false
+  # Run Command (`az aks command invoke`) is on: Terraform applies the Argo CD
+  # root Application through it (AD-39). It bypasses the IP allow-list, but
+  # still requires Entra ID + Azure RBAC (runcommand/action plus Kubernetes
+  # rights); accepted so the environment comes up with one apply.
+  run_command_enabled = true
 
   # Workload Identity: pods exchange their service account token for an Entra
   # token (the IRSA / EKS Pod Identity equivalent).
@@ -114,6 +117,16 @@ resource "azurerm_kubernetes_cluster" "this" {
     file_driver_enabled         = false
     blob_driver_enabled         = false
   }
+
+  # Container Insights agent (AMA) with managed identity auth; what it
+  # collects is defined by the data collection rule in modules/monitoring.
+  oms_agent {
+    log_analytics_workspace_id      = var.log_analytics_workspace_id
+    msi_auth_for_monitoring_enabled = true
+  }
+
+  # Managed Prometheus metrics add-on (default minimal ingestion profile).
+  monitor_metrics {}
 
   # Removes unused (and possibly vulnerable) images from the nodes.
   image_cleaner_enabled        = true

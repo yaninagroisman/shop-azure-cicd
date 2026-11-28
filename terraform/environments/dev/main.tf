@@ -41,6 +41,8 @@ module "aks" {
   api_server_authorized_ip_ranges = var.api_server_authorized_ip_ranges
   cluster_admin_object_ids        = var.cluster_admin_object_ids
 
+  log_analytics_workspace_id = module.monitoring.log_analytics_workspace_id
+
   tags = local.tags
 }
 
@@ -134,4 +136,60 @@ module "key_vault" {
   }
 
   tags = local.tags
+}
+
+# --- Monitoring (2c, AD-26) -------------------------------------------------
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+  cluster_id          = module.aks.cluster_id
+  cluster_name        = module.aks.cluster_name
+
+  log_analytics_workspace_name = local.names.log_analytics
+  monitor_workspace_name       = local.names.monitor_workspace
+  action_group_name            = local.names.action_group
+
+  log_retention_days      = var.log_retention_days
+  log_daily_quota_gb      = var.log_daily_quota_gb
+  log_collection_interval = var.log_collection_interval
+  log_namespaces          = var.log_namespaces
+
+  metrics_reader_principal_ids = { for i, id in var.cluster_admin_object_ids : "admin-${i}" => id }
+  alert_emails                 = var.alert_emails
+
+  tags = local.tags
+}
+
+# --- Entry point and GitOps (2d) --------------------------------------------
+
+module "gateway_ip" {
+  source = "../../modules/gateway-ip"
+
+  name                       = local.names.gateway_ip
+  resource_group_name        = azurerm_resource_group.this.name
+  location                   = azurerm_resource_group.this.location
+  domain_name_label          = local.names.gateway_dns_label
+  control_plane_principal_id = module.aks.control_plane_identity_principal_id
+  tags                       = local.tags
+}
+
+module "argocd" {
+  source = "../../modules/argocd"
+
+  subscription_id     = var.subscription_id
+  resource_group_name = azurerm_resource_group.this.name
+  cluster_id          = module.aks.cluster_id
+  cluster_name        = module.aks.cluster_name
+
+  # The pipeline identity; people applying locally are cluster admins.
+  applier_principal_ids = {
+    tf-apply = data.azurerm_user_assigned_identity.pipeline["tf-apply"].principal_id
+  }
+
+  gitops_repo_url      = var.gitops_repo_url
+  gitops_repo_revision = var.gitops_repo_revision
+  gitops_repo_path     = var.gitops_repo_path
 }

@@ -109,7 +109,8 @@ variable "assignable_role_names" {
     The only built-in roles the tf-apply identity may assign or remove
     (ABAC condition on its RBAC Administrator role). These are the roles the
     main stack grants: kubelet AcrPull, CI AcrPush, AKS control plane network
-    and identity roles, Key Vault data roles, and AKS admin for the owner.
+    and identity roles, Key Vault data roles, AKS admin and Prometheus read
+    access for the owner.
   EOT
   type        = list(string)
   default = [
@@ -123,6 +124,7 @@ variable "assignable_role_names" {
     "Key Vault Crypto User",
     "Key Vault Crypto Officer",
     "Monitoring Metrics Publisher",
+    "Monitoring Data Reader",
   ]
 
   validation {

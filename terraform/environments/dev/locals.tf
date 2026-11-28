@@ -22,6 +22,14 @@ locals {
     key_vault = "kv-${local.name_suffix}-${random_string.suffix.result}"
 
     workload_identity_prefix = "id-${local.name_suffix}"
+
+    log_analytics     = "log-${local.name_suffix}"
+    monitor_workspace = "amw-${local.name_suffix}"
+    action_group      = "ag-${local.name_suffix}-email"
+
+    gateway_ip = "pip-${local.name_suffix}-gateway"
+    # <label>.<region>.cloudapp.azure.com must be unique in the region.
+    gateway_dns_label = "${var.project}-${var.environment}-${random_string.suffix.result}"
   }
 
   # Pipeline identities live in the bootstrap (AD-31a); this stack only grants

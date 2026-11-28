@@ -5,9 +5,9 @@ it, one `terraform destroy` removes it** (AD-31); nothing here is meant to
 survive a destroy. The state lives in the bootstrap storage account
 (`dev.tfstate`).
 
-Status: sub-stages **2a** (network + AKS) and **2b** (ACR, Key Vault,
-workload identities) are written; 2c (monitoring) and 2d (Argo CD, public IP)
-follow. Nothing is applied yet.
+Status: sub-stages **2a** (network + AKS), **2b** (ACR, Key Vault, workload
+identities), **2c** (monitoring) and **2d** (Gateway public IP, Argo CD) are
+written. Nothing is applied yet.
 
 ## What 2a creates
 
@@ -43,6 +43,38 @@ Who can read what:
 | `tf-plan` | both MongoDB secrets (refresh reads values) + Key Vault Reader from the bootstrap |
 | `tf-apply`, cluster admins | Secrets Officer + Crypto Officer on the vault (Terraform writes the secrets and the key) |
 
+## What 2c creates (AD-26)
+
+| Resource | Notes |
+|---|---|
+| `log-shop-dev-swc` | Log Analytics: retention **30 days** (minimum, no extra cost), daily cap **0.25 GB** (collection stops for the day when reached), Entra ID auth only |
+| Container Insights DCR | Logs and events only, namespaces `shop` and `kafka`, every 5 minutes, ContainerLogV2 |
+| `amw-shop-dev-swc` | Azure Monitor workspace for Managed Prometheus (AKS metrics add-on, minimal ingestion profile). Cluster admins get Monitoring Data Reader for the free portal Grafana dashboards |
+| `ag-shop-dev-swc-email` | Email action group (`alert_emails`, git-ignored tfvars) |
+| Prometheus rule group | Node not ready, pod crash looping, pod not running, volume > 80 %, node CPU / memory > 90 % |
+
+All limits are variables: `log_retention_days`, `log_daily_quota_gb`,
+`log_collection_interval`, `log_namespaces`. Raise the cap in
+`terraform.tfvars` and apply when debugging needs more logs.
+
+Rough cost while running: logs at most 0.25 GB/day (about 7.5 GB/month;
+the first 5 GB/month per billing account are free), Prometheus a few dollars
+a month for two nodes, alert rules and email negligible.
+
+## What 2d creates
+
+| Resource | Notes |
+|---|---|
+| `pip-shop-dev-swc-gateway` | Static Standard public IP, zone-redundant, DNS label `shop-dev-<suffix>` → `shop-dev-<suffix>.swedencentral.cloudapp.azure.com` (AD-12, AD-37). In the main resource group; the AKS control plane identity gets Network Contributor on this IP only |
+| Argo CD extension `argocd` | `Microsoft.ArgoCD` cluster extension in namespace `argocd`, non-HA (`redis-ha.enabled=false`), Azure-managed upgrades (AD-32) |
+| Namespace role for `tf-apply` | AKS RBAC Cluster Admin scoped to `namespaces/argocd`: enough to create the root Application |
+| Root Application `root` | App of apps from the separate GitOps repository (`gitops_repo_url`, `gitops_repo_revision`, `gitops_repo_path`; AD-40), auto-sync with prune + self-heal. Applied by `az aks command invoke` from Terraform (AD-39) |
+
+The Gateway in the GitOps repository uses the IP through the annotations in
+the `gateway_service_annotations` output (`spec.infrastructure.annotations`).
+The Argo CD UI is not exposed (AD-38): `terraform output -raw
+argocd_ui_command` prints the admin password and port-forward commands.
+
 ## Usage
 
 ```bash
@@ -58,6 +90,10 @@ $(terraform output -raw kubeconfig_command)
 
 terraform destroy                              # removes the whole environment
 ```
+
+`terraform apply` needs the Azure CLI (signed in) and `jq` on the machine
+that runs it: the root Application is applied through `az aks command
+invoke`. In Azure Pipelines run Terraform inside an `AzureCLI@2` task.
 
 When your public IP changes, update `api_server_authorized_ip_ranges` and
 apply again, otherwise `kubectl` is refused.
@@ -77,6 +113,27 @@ apply again, otherwise `kubectl` is refused.
 - **Key Vault and ACR have public endpoints:** protected by Entra ID + RBAC
   only (Microsoft-hosted agents have no fixed IPs; ACR Basic has no network
   rules).
+- **Daily log cap:** when 0.25 GB is reached, logs stop until the next day
+  (UTC); metrics and alerts keep working.
+- **Alert rules after the first apply:** the rules use kube-state-metrics,
+  kubelet and node-exporter series of the minimal ingestion profile; check
+  in the portal that each rule evaluates without errors.
+- **Checkov does not scan `modules/monitoring/alerts.tf`:** its HCL parser
+  cannot read the provider's required `for` argument (reported as a parsing
+  error, not a finding). The file holds only the Prometheus rule group.
+- **Run Command is enabled (AD-39):** `az aks command invoke` reaches the
+  cluster through ARM and bypasses the API server IP allow-list. It still
+  needs Entra ID, the `runcommand/action` permission and Kubernetes rights
+  (Azure RBAC); local accounts stay disabled. Disable it again once the root
+  Application can be delivered another way.
+- **GitOps repository must be public:** Argo CD gets no repository
+  credentials. A private repository needs a deploy key or GitHub App secret.
+- **Root Application is applied once per cluster:** Terraform re-runs the
+  command only when the manifest or the cluster changes; afterwards Argo CD
+  owns everything. Deleting the root Application by hand is not detected by
+  Terraform: taint `module.argocd.terraform_data.root_application` and apply.
+- **Argo CD extension upgrades are automatic** (no version pinned); the
+  extension follows Microsoft's supported Argo CD version.
 - **First apply waits 90 s** after the Key Vault role assignments
   (`time_sleep`): new roles need time to reach the Key Vault data plane.
 
@@ -98,4 +155,3 @@ Checkov findings suppressed inline in `modules/` (with the reason next to each):
 | CKV_AZURE_41, 40 (no expiry) | Secrets and key live only as long as the environment |
 | CKV_AZURE_112 (HSM key) | Needs the Premium SKU |
 
-CKV_AZURE_4 (AKS logging) is still open in 2a; Container Insights is added in 2c.

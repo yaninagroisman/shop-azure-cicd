@@ -10,3 +10,15 @@ api_server_authorized_ip_ranges = ["203.0.113.10/32"]
 
 # Your Entra object ID: az ad signed-in-user show --query id -o tsv
 cluster_admin_object_ids = ["00000000-0000-0000-0000-000000000000"]
+
+# Who receives monitoring alerts.
+alert_emails = ["you@example.com"]
+
+# Monitoring limits (defaults shown; uncomment to change).
+# log_retention_days = 30
+# log_daily_quota_gb = 0.25
+
+# Separate GitOps repository (app of apps). Public: Argo CD gets no credentials.
+gitops_repo_url = "https://github.com/<user>/<gitops-repo>"
+# gitops_repo_revision = "main"
+# gitops_repo_path     = "apps"

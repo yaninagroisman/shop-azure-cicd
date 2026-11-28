@@ -88,6 +88,11 @@ variable "cluster_admin_object_ids" {
   type        = list(string)
 }
 
+variable "log_analytics_workspace_id" {
+  description = "Log Analytics workspace for the Container Insights agent."
+  type        = string
+}
+
 variable "tags" {
   description = "Tags applied to every resource."
   type        = map(string)

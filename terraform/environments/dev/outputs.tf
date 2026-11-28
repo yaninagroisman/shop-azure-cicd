@@ -62,3 +62,28 @@ output "cosign_public_key_pem" {
   description = "Public Cosign key for Kyverno verifyImages."
   value       = module.key_vault.signing_public_key_pem
 }
+
+output "log_analytics_workspace_name" {
+  description = "Log Analytics workspace (Container Insights logs)."
+  value       = module.monitoring.log_analytics_workspace_name
+}
+
+output "gateway_public_ip" {
+  description = "Public IP of the application Gateway."
+  value       = module.gateway_ip.ip_address
+}
+
+output "gateway_fqdn" {
+  description = "Application URL host (Let's Encrypt certificate name)."
+  value       = module.gateway_ip.fqdn
+}
+
+output "gateway_service_annotations" {
+  description = "Put these into the Gateway's spec.infrastructure.annotations in the GitOps repository."
+  value       = module.gateway_ip.service_annotations
+}
+
+output "argocd_ui_command" {
+  description = "Open the Argo CD UI on https://localhost:8080 (not exposed publicly, AD-38); user admin."
+  value       = "kubectl -n ${module.argocd.namespace} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d; echo; kubectl -n ${module.argocd.namespace} port-forward svc/argocd-server 8080:443"
+}

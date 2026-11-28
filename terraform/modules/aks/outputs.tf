@@ -24,6 +24,6 @@ output "kubelet_identity_object_id" {
 }
 
 output "control_plane_identity_principal_id" {
-  description = "Principal ID of the control plane identity (needs Network Contributor on a pre-created public IP)."
+  description = "Principal ID of the control plane identity (gets Network Contributor on the Gateway public IP)."
   value       = azurerm_user_assigned_identity.control_plane.principal_id
 }
