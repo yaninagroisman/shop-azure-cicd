@@ -10,7 +10,6 @@ The client is a minimal Flask app that renders Jinja2 templates and serves stati
 
 | File | What it is |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Permanent working rules (documentation updates, constraints) |
 | [`docs/ROADMAP.md`](docs/ROADMAP.md) | Master roadmap: the single source of truth for tasks |
 | [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) | Current phase, progress, next tasks |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Current vs target architecture, read and write flows, Kafka |
@@ -20,7 +19,6 @@ The client is a minimal Flask app that renders Jinja2 templates and serves stati
 | [`docs/SECURITY.md`](docs/SECURITY.md) · [`docs/TESTING.md`](docs/TESTING.md) · [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Security, tests, how to run |
 | [`docs/COMMERCIAL_READINESS.md`](docs/COMMERCIAL_READINESS.md) | Readiness checklist and risk register |
 | [`docs/DECISIONS.md`](docs/DECISIONS.md) · [`docs/HANDOVER.md`](docs/HANDOVER.md) · [`docs/PRODUCT_VISION.md`](docs/PRODUCT_VISION.md) | Decisions, handover, vision |
-| [`CHANGELOG.md`](CHANGELOG.md) | Changes |
 | [`REPORT.md`](REPORT.md) | Detailed work log (Russian) |
 
 ## Run it
@@ -81,7 +79,7 @@ client/
       ledger.js           The Mischief Ledger (/orders)
       game.js             the door mini-game on the home page ("Mischief on the Loose")
     static/fonts/         self-hosted Fraunces, IM Fell English, Caveat (OFL)
-    static/img/           photographs: scenes/, products/, textures/, sprites/ (see ASSETS.md)
+    static/img/           photographs: scenes/, products/, textures/, sprites/
 ```
 
 ## Purchases: mock now, your backend later
@@ -138,4 +136,4 @@ Mock demo switches (add to any URL): `?mock=fail` (every new order fails), `?moc
 
 *© Marvellous Mischief Co. All mischief is fictional and all Griffins are imaginary.*
 
-> **Images:** all product photos and the storefront were replaced with versions branded "Marvellous Mischief Co." (checked visually on 2026-11-25). `ASSETS.md` §1–9 is the original brief and still uses the old names; only §0 is current.
+> **Images:** all product photos and the storefront were replaced with versions branded "Marvellous Mischief Co." (checked visually on 2026-11-25).

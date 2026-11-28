@@ -1,8 +1,18 @@
+# Fixed project name: container, network and volume names no longer depend
+# on the folder name (they used to be "hpstoreproject_*").
+name: shop
+
 services:
   mongodb:
     image: mongo:8.0
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
   kafka:
     image: apache/kafka:4.1.2
@@ -17,8 +27,99 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /var/lib/kafka/data
+      # Topics are created explicitly by kafka-init. Auto-creation would make
+      # "purchases" with a single partition the first time anyone touches it.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 20s
+
+  # One-shot job: creates the topics the application needs, then exits.
+  # --if-not-exists makes it safe to run on every "docker compose up".
+  kafka-init:
+    image: apache/kafka:4.1.2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
+          --topic purchases --partitions 3 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
+          --topic purchases.dlq --partitions 1 --replication-factor 1
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic purchases
+    restart: "no"
+
+  api:
+    build: ./api
+    image: shop-api:1.0
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      # The image has no curl; Python's standard library is enough.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/healthz', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  consumer:
+    image: shop-api:1.0
+    command: ["python", "consumer.py"]
+    environment:
+      MONGO_URI: mongodb://mongodb:27017
+      KAFKA_SERVER: kafka:9092
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    # Time to finish the current message and leave the group cleanly on SIGTERM.
+    stop_grace_period: 30s
+    healthcheck:
+      # The consumer has no HTTP port: its main loop touches a heartbeat file.
+      test: ["CMD", "python", "-c", "import os, sys, time; sys.exit(time.time() - os.path.getmtime('/tmp/consumer-heartbeat') > 60)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  client:
+    build: ./client
+    image: shop-client:1.0
+    ports:
+      - "8080:5000"
+    environment:
+      KAFKA_SERVER: kafka:9092
+      API_URL: http://api:5000
+      API_MODE: http
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/healthz', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 
 volumes:
   mongo_data:

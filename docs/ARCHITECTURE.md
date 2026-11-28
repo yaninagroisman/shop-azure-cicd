@@ -24,7 +24,6 @@
 ├── compose.yaml            mongodb (mongo:8.0) + kafka (apache/kafka:4.1.2, KRaft): Present, not wired
 ├── docs/                   this documentation
 ├── REPORT.md               detailed Russian work log of the frontend (historical)
-├── ASSETS.md               asset register (sources, licences) and image guide
 └── optional-concepts/      concept images; tools/ (image pipeline, old checks); source-png/ (masters, git-ignored)
 ```
 

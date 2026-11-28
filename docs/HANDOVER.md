@@ -7,10 +7,10 @@ This file has two parts:
 
 ## A. Continuing development
 
-1. Read `CLAUDE.md`, then [ROADMAP.md](ROADMAP.md) and [PROJECT_STATUS.md](PROJECT_STATUS.md).
+1. Read [ROADMAP.md](ROADMAP.md) and [PROJECT_STATUS.md](PROJECT_STATUS.md).
 2. Run the frontend as described in [DEPLOYMENT.md](DEPLOYMENT.md) §1. Infrastructure: `docker compose up -d`.
 3. Pick the next task from PROJECT_STATUS → *Recommended next tasks*. Check its dependencies and acceptance criteria in ROADMAP.
-4. When the task is done, update the docs as `CLAUDE.md` requires.
+4. When the task is done, update the docs.
 
 Where things are:
 
@@ -18,7 +18,7 @@ Where things are:
 |---|---|
 | How the system fits together | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | API contract | [API.md](API.md) |
-| Visual rules | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [ASSETS.md](../ASSETS.md) §0 |
+| Visual rules | [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) |
 | Detailed history of the frontend work (Russian) | [REPORT.md](../REPORT.md) |
 | Why something is the way it is | [DECISIONS.md](DECISIONS.md) |
 
@@ -33,4 +33,4 @@ Where things are:
 - [ ] Rights schedule signed (P6-06).
 - [ ] Buyer sign-off (P6-14).
 
-**Do not hand over** `REPORT.md` or ASSETS.md §1–9 as they are: they name the franchise the theme was derived from (risk R-03).
+**Do not hand over** `REPORT.md` as it is: it may name the franchise the theme was derived from (risk R-03).

@@ -1,0 +1,28 @@
+# Local Terraform working data
+.terraform/
+crash.log
+crash.*.log
+
+# State can contain sensitive values: it lives only in the remote backend
+*.tfstate
+*.tfstate.*
+
+# Saved plans contain resource attributes in plain text
+*.tfplan
+tfplan
+
+# Real variable values (subscription, emails) stay out of git; examples are committed
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Generated backend settings (terraform output -raw backend_config > backend.hcl)
+backend.hcl
+
+# Local overrides
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# The provider lock file IS committed: .terraform.lock.hcl

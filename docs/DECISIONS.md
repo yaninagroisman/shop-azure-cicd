@@ -26,7 +26,7 @@ D-001 to D-013 were made during the frontend work before 2026-11-25. They are re
 | D-010 | 2026-11-25 | **Product images are cut-outs on 1600×1600 transparent canvases, base at 88%, with 640 px copies**; multi-state products use extra frames or layers | Consistent staging on the darkened display niche. CSS animations rely on these positions. |
 | D-011 | 2026-11-25 | **Basket stored in `localStorage`; checkout calls `buy()` once per line, in sequence** | No API contract change. Trade-off: non-atomic (R-07); fix planned as P1-19 (D-020). |
 | D-012 | 2026-11-25 | **The Ledger (`/orders`) is reachable only from the home-page button**, not from the menu or toasts | Owner's product decision. |
-| D-013 | 2026-11-25 | **`ROADMAP.md` is the single source of truth for tasks; documentation updated after every task** | Rules recorded in `CLAUDE.md`. |
+| D-013 | 2026-11-25 | **`ROADMAP.md` is the single source of truth for tasks; documentation updated after every task** | Docs are updated together with each task. |
 | D-017 | 2026-11-25 | **Dev-only test dependencies: pytest and Playwright** (`client/requirements-dev.txt`) | The site itself still needs only Flask. Browser tests use Playwright's bundled Chromium. |
 | D-018 | 2026-11-25 | **The owner writes the backend (API, Kafka producer and consumer, MongoDB access)** as part of the course | Roadmap tasks P1-02, P1-05, P1-09 and P1-10 are owner-implemented. The contract in API.md stays the interface between the two halves. |
 | D-019 | 2026-11-25 | **Git from now on; PNG masters stay outside git** (`optional-concepts/source-png/`, git-ignored) | Keeps the repository light (WebP only, 11 MB). The masters must still be handed over to a buyer (P6-10). |

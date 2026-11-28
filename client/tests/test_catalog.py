@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from app.catalog import CATEGORIES, PRODUCTS, get_product, related_products
 
 STATIC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "app", "static", "img", "products")
