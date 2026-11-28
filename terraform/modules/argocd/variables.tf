@@ -45,3 +45,9 @@ variable "gitops_repo_path" {
   type        = string
   default     = "apps"
 }
+
+variable "platform_values" {
+  description = "Non-secret per-environment values passed to the GitOps app-of-apps chart (Helm valuesObject)."
+  type        = any
+  default     = {}
+}

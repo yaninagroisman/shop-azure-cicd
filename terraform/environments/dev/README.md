@@ -70,6 +70,13 @@ a month for two nodes, alert rules and email negligible.
 | Namespace role for `tf-apply` | AKS RBAC Cluster Admin scoped to `namespaces/argocd`: enough to create the root Application |
 | Root Application `root` | App of apps from the separate GitOps repository (`gitops_repo_url`, `gitops_repo_revision`, `gitops_repo_path`; AD-40), auto-sync with prune + self-heal. Applied by `az aks command invoke` from Terraform (AD-39) |
 
+Per-environment values (registry, Key Vault, tenant, workload identity
+client IDs, Cosign public key, Gateway FQDN and annotations) reach the
+GitOps repository's `apps/` Helm chart through the root Application's
+`helm.valuesObject` (GitOps bridge, AD-45): nothing environment-specific is
+committed to Git, and none of these values is secret. When one of them
+changes, Terraform re-applies the root Application.
+
 The Gateway in the GitOps repository uses the IP through the annotations in
 the `gateway_service_annotations` output (`spec.infrastructure.annotations`).
 The Argo CD UI is not exposed (AD-38): `terraform output -raw

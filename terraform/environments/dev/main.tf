@@ -192,4 +192,20 @@ module "argocd" {
   gitops_repo_url      = var.gitops_repo_url
   gitops_repo_revision = var.gitops_repo_revision
   gitops_repo_path     = var.gitops_repo_path
+
+  # Contract with gitops-shop/apps/values.yaml (AD-45). Public values only.
+  platform_values = {
+    tenantId = data.azurerm_client_config.current.tenant_id
+    registry = module.acr.login_server
+    keyVault = {
+      name    = module.key_vault.name
+      secrets = { mongodbRoot = local.mongodb_root_secret, mongodbApp = local.mongodb_app_secret }
+    }
+    workloadIdentities = { for k, m in module.workload_identity : k => m.client_id }
+    cosignPublicKey    = module.key_vault.signing_public_key_pem
+    gateway = {
+      fqdn        = module.gateway_ip.fqdn
+      annotations = module.gateway_ip.service_annotations
+    }
+  }
 }

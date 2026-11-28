@@ -19,9 +19,14 @@ resource "azurerm_kubernetes_cluster_extension" "argocd" {
 locals {
   namespace = "argocd"
 
-  # App of apps: the root Application points at a folder of child
+  # App of apps: the root Application points at a small Helm chart of child
   # Applications in the separate GitOps repository (AD-40); Argo CD then
   # deploys everything else (Strimzi, Kafka, MongoDB, the application).
+  #
+  # GitOps bridge (AD-45): values that change with every re-created
+  # environment (registry and vault names, identity client IDs, the Cosign
+  # public key, the Gateway IP) are not committed to Git; Terraform hands
+  # them to the chart as Helm values. Nothing secret goes through here.
   root_application = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
@@ -35,6 +40,9 @@ locals {
         repoURL        = var.gitops_repo_url
         targetRevision = var.gitops_repo_revision
         path           = var.gitops_repo_path
+        helm = {
+          valuesObject = var.platform_values
+        }
       }
       destination = {
         server    = "https://kubernetes.default.svc"
