@@ -19,13 +19,18 @@ import logging
 import os
 import signal
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bson.errors import InvalidDocument
 from confluent_kafka import Consumer, KafkaException, Producer, TopicPartition
-from pymongo.errors import ConnectionFailure, DuplicateKeyError, PyMongoError, WriteError
-
 from database import ensure_indexes, save_purchase
+from kafka_config import kafka_config
+from pymongo.errors import (
+    ConnectionFailure,
+    DuplicateKeyError,
+    PyMongoError,
+    WriteError,
+)
 
 KAFKA_SERVER = os.getenv("KAFKA_SERVER", "kafka:9092")
 TOPIC = os.getenv("KAFKA_TOPIC", "purchases")
@@ -125,7 +130,7 @@ def process(message, dlq_producer, save=save_purchase):
     reason = validation_error(purchase)
     purchase["status"] = "failed" if reason else "completed"
     purchase["failure_reason"] = reason
-    purchase["updated_at"] = datetime.now(timezone.utc).isoformat()
+    purchase["updated_at"] = datetime.now(UTC).isoformat()
 
     try:
         save(purchase)
@@ -191,13 +196,13 @@ def run():
         return
 
     consumer = Consumer({
-        "bootstrap.servers": KAFKA_SERVER,
+        **kafka_config(KAFKA_SERVER),
         "group.id": GROUP_ID,
         "auto.offset.reset": "earliest",
         "enable.auto.commit": False,
     })
     dlq_producer = Producer({
-        "bootstrap.servers": KAFKA_SERVER,
+        **kafka_config(KAFKA_SERVER),
         "acks": "all",
         "enable.idempotence": True,
     })

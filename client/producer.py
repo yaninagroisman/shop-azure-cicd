@@ -11,6 +11,7 @@ import threading
 import time
 
 from confluent_kafka import Producer
+from kafka_config import kafka_config
 
 KAFKA_SERVER = os.getenv("KAFKA_SERVER", "kafka:9092")
 TOPIC = os.getenv("KAFKA_TOPIC", "purchases")
@@ -19,7 +20,8 @@ TOPIC = os.getenv("KAFKA_TOPIC", "purchases")
 DELIVERY_TIMEOUT_SECONDS = float(os.getenv("KAFKA_DELIVERY_TIMEOUT_SECONDS", "5"))
 
 producer = Producer({
-    "bootstrap.servers": KAFKA_SERVER,
+    # Security settings (SASL/SCRAM + TLS on AKS) come from the environment.
+    **kafka_config(KAFKA_SERVER),
     "acks": "all",
     # Broker de-duplicates producer retries, so a network glitch does not
     # write the same purchase twice.
