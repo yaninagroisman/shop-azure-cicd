@@ -2,57 +2,64 @@
 
 > Snapshot of [ROADMAP.md](ROADMAP.md), which wins if the two ever disagree. Update both after every task.
 >
-> **Last updated: 2026-11-25** (Netlify preview published)
+> **Last updated: 2026-11-28** (Azure and DevOps written; first dev apply blocked by the vCPU quota)
 
-## Current phase
+## Current phases
 
-**Phase 1: Core Project Completion.** Progress is **6 of 19 tasks completed (32%)**.
+**Phases 1 and 2 run in parallel** (the owner started Phase 2 early, on 2026-11-26).
 
-In mock mode the frontend is functionally complete and covered by 64 automated tests. The project is now under git. The backend (API → Kafka → consumer → MongoDB) is written by the owner as part of the course. Today the containers run, but `api/app.py` and `api/consumer.py` are empty.
+- **Phase 1, Core Project Completion:** the code is complete: shop front, Kafka producer, consumer, API, MongoDB, Dockerfiles and compose. 111 automated tests. The remaining work is an end-to-end run and owner acceptance.
+- **Phase 2, Azure & DevOps:** everything is written: Terraform (bootstrap + dev), the GitOps repository and the CI pipeline. Bootstrap is applied. The dev cluster does not fit the 4 vCPU Free Trial quota, so the environment could not finish its first deployment.
 
 ## Progress by phase
 
-Progress = completed tasks ÷ all tasks in the phase.
+Progress = completed tasks ÷ all tasks in the phase. Tasks that are written but not yet checked count as `IN_REVIEW`, not as completed.
 
-| Phase | Completed / total | Progress |
-|---|---:|---:|
-| 1. Core Project Completion | 6 / 19 | 32% |
-| 2. Azure & DevOps | 0 / 17 | 0% |
-| 3. Market Validation | 1 / 12 | 8% |
-| 4. Commercial Product Development (including the Admin Panel, P4-01…P4-11) | 0 / 43 | 0% |
-| 5. Commercial Readiness & Packaging | 1 / 24 | 4% |
-| 6. Sale & Handover | 0 / 14 | 0% |
-| **Overall** | **8 / 129** | **6.2%** |
+| Phase | Completed / total | In progress or review | Progress |
+|---|---:|---:|---:|
+| 1. Core Project Completion | 6 / 19 | 12 | 32% |
+| 2. Azure & DevOps | 2 / 17 | 13 (+1 blocked) | 12% |
+| 3. Market Validation | 1 / 12 | 0 | 8% |
+| 4. Commercial Product Development | 0 / 43 | 0 | 0% |
+| 5. Commercial Readiness & Packaging | 2 / 24 | 4 | 8% |
+| 6. Sale & Handover | 0 / 14 | 0 | 0% |
+| **Overall** | **11 / 129** | **29** | **8.5%** |
 
-## Done on 2026-11-25
+## Done on 2026-11-26 … 2026-11-28
 
-- P1-03: catalogue verified by automated tests.
-- P1-16: project under git.
-- P1-17: unused PNGs removed from `static/`.
-- P1-18: franchise references removed from the docs.
-- P3-12: static preview published on Netlify (mock mode).
-- P1-01: mobile fixes (no sideways panning, steam position, darkness smoke clip); P5-13: margin-note signature fixed.
-- P5-14: the owner confirmed the right to sell under the training contract.
-- P1-12 started: `client/tests/` exists, with 64 tests passing.
+- **Backend (P1-02, P1-05, P1-09, P1-10, P1-11):**
+  - `POST /api/buy` publishes to Kafka (idempotent producer);
+  - at-least-once consumer with idempotent insert, `failed` with reason, dead-letter topic and retries;
+  - api `GET /purchases` plus health endpoints;
+  - Kafka SASL/SCRAM + TLS settings from the environment.
+- **Containers and compose (P1-13, P1-14):** Gunicorn, non-root, pinned images and dependencies; the full stack with health-checked start order.
+- **Tests (P1-12):** api 36, client 75; ruff pinned and clean; hadolint clean.
+- **Azure design (P2-01):** 51 architecture decisions (AD-xx) approved by the owner.
+- **Terraform (P2-02, P2-03, P2-14):**
+  - `bootstrap/` applied: state, pipeline identities, Azure DevOps project, budget;
+  - `environments/dev/` written and applied once (57/58 resources).
+- **GitOps repository `gitops-shop`:** Argo CD app of apps, cert-manager, Strimzi Kafka, Kyverno, Gateway + Let's Encrypt, MongoDB, the shop, NetworkPolicies, image signature verification.
+- **CI (P2-04 … P2-08):** `.azure-pipelines/ci.yml`: Gitleaks, ruff, hadolint, pytest, Trivy, push to ACR, Cosign signing, GitOps tag bump.
+- **Secret scan (P5-11):** Gitleaks over the full history, 0 findings.
+- **Documentation:** ARCHITECTURE, DECISIONS, DEPLOYMENT, SECURITY, TESTING, API, DATABASE and FEATURES updated for the backend and Azure.
 
 ## Blockers and open decisions
 
-- **P1-05 Order Processing** is blocked until the owner's backend (P1-02, P1-10) exists.
-- **D-014** (catalog and price source for the backend) is deferred to the admin panel (P4-03).
-- **D-015** (who writes the `pending` row) is the owner's call while writing the backend.
-- **P1-19 atomic checkout** needs the API contract change agreed with the backend.
-- **P5-13 IP:** the project folder is still named "HP Store Project". The easter eggs stay as they are (D-021).
+- **Cluster sizing (blocks P2-02, P2-17 and every Azure check):**
+  - 2 × D2ads_v5 gives 3.8 allocatable vCPU; the AKS add-ons plus the stack request ~5.9.
+  - Options: fit into 4 vCPU (lighter Gateway, less monitoring, self-managed KEDA), or Pay-As-You-Go with an 8 vCPU quota.
+  - Details: [DECISIONS.md](DECISIONS.md), "Capacity finding".
+- **Open questions:** rate limiting, Azure Policy, Terraform plan/apply pipelines.
+- **D-014** (catalog source for the backend) is deferred to the admin panel (P4-03).
+- **P1-19** atomic checkout needs an API contract change.
 
 ## Recommended next tasks (in order)
 
-1. **P1-02, P1-10, P1-09 (owner):**
-   - write the API, the Kafka producer and consumer, and the MongoDB write;
-   - remove the stale test document;
-   - follow [API.md](API.md).
-2. **P1-19:** agree the "one order with lines" contract, then implement it on both sides.
-3. **P1-13, P1-14:** `client/Dockerfile` (Gunicorn), plus compose services for client, api and consumer, with health checks.
-4. **P1-12:** API and consumer tests, and an integration test through Kafka.
-5. **P5-13:** rename the project folder (after closing the session).
+1. **Decide the cluster sizing** (P2-01), adjust Terraform and `gitops-shop`, then apply dev again (P2-02).
+2. **One-time Azure DevOps setup** (GitHub App, deploy key) and the first CI run on `main` (P2-04 … P2-08).
+3. **Check the deployment** with the list in [DEPLOYMENT.md](DEPLOYMENT.md) §2.6; record the evidence in ROADMAP.
+4. **Run the local stack end to end** (`docker compose up`, one purchase) to close P1-05 … P1-15.
+5. Terraform plan/apply pipelines; HSTS; a consumer-lag alert.
 
 ## Change log of this file
 
@@ -61,3 +68,4 @@ Progress = completed tasks ÷ all tasks in the phase.
 | 2026-11-25 | Initial audit and status baseline |
 | 2026-11-25 | Owner decisions: git, tests, PNG cleanup, IP scrub of the docs, D-014 deferred, P1-19 added, P5-14 confirmed |
 | 2026-11-25 | P3-12 completed: Netlify preview published |
+| 2026-11-28 | Backend, containers, compose, tests; Azure design, Terraform, GitOps and CI written; first dev apply blocked by the vCPU quota |

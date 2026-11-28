@@ -1,15 +1,15 @@
 # Commercial Readiness
 
-> **Verdict (2026-11-25): not ready for sale.** This is a pre-commercial demo, and the backend is still missing. The checklist tasks are tracked in [ROADMAP.md](ROADMAP.md) Phase 5.
+> **Verdict (2026-11-28): not ready for sale.** This is a pre-commercial demo: the backend and the Azure deployment code exist, but there is no public demo yet. The checklist tasks are tracked in [ROADMAP.md](ROADMAP.md) Phase 5.
 
 ## Readiness checklist (summary)
 
 | Area | State | Roadmap |
 |---|---|---|
-| Working end-to-end product | ✗ (frontend only, mock orders) | Phase 1 |
+| Working end-to-end product | partial (full stack in compose, unit-tested; no end-to-end run recorded) | Phase 1 |
 | Public demo | ✗ | P3-01 |
-| Version control and clean history | ✓ local git (2026-11-25) | P1-16, P5-10 |
-| Automated tests | partial (client: 64 tests) | P1-12, P5-05 |
+| Version control and clean history | ✓ GitHub; Gitleaks over the full history: 0 findings (2026-11-28) | P1-16, P5-10, P5-11 |
+| Automated tests | partial (api 36, client 75; no integration test through Kafka) | P1-12, P5-05 |
 | IP clean | partial (code, images and docs OK; folder name open; easter eggs kept (D-021)) | P5-13 |
 | Right to sell (training project) | ✓ per contract (owner) | P5-14 |
 | AI asset terms | generator recorded (ChatGPT), details open | P5-15 |
@@ -21,8 +21,8 @@
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| R-01 | ~~No version control~~. **Resolved 2026-11-25**: local git repository (P1-16). A remote is still to be chosen (D-016) | — | — | Push to a private remote |
-| R-02 | **Backend not written.** The core course requirement (Kafka async writes) is not met: `app.py` and `consumer.py` are empty | Certain (today) | High | The owner is writing it (D-018): P1-02, P1-09, P1-10 |
+| R-01 | ~~No version control~~. **Resolved**: git (2026-11-25), public GitHub repositories (D-016, AD-28) | — | — | — |
+| R-02 | ~~Backend not written~~. **Resolved 2026-11-27/28**: API, producer and consumer implemented and unit-tested (P1-02, P1-09, P1-10) | — | — | End-to-end run still to record |
 | R-03 | **Residual third-party IP.** Code and images are rebranded, but: (a) ~~docs mapping products to the franchise~~ removed 2026-11-25 (P1-18); (b) the project folder is named "HP Store Project"; (c) the catalogue concept and the easter eggs (secret map with an oath phrase, spell-like Latin words, a family clock with danger hands, twin shop owners) closely follow that franchise | High | High: a buyer's legal review could reject it | Docs scrubbed (P1-18). Rename the folder; easter eggs kept as they are by owner decision (D-021); have an IP lawyer review the theme (P5-13). Consider making a second, neutral demo theme the primary listing (P4-39) |
 | R-04 | ~~Ownership of a training project~~. **Resolved 2026-11-25**: the owner confirmed that the training contract allows the sale (P5-14) | — | — | Keep a copy of the clause for buyer due diligence |
 | R-05 | **Partial test coverage.** The client has 64 automated tests (2026-11-25); the backend has none yet | Certain | Medium | P1-12 |
